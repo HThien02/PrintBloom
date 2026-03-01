@@ -17,13 +17,53 @@ function QuoteContent() {
   const { t } = useLanguage()
   const { items, removeFromCart } = useCart()
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const customItems = items.filter((item) => item.isCustomQuantity)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setSubmitted(true)
-    customItems.forEach((item) => removeFromCart(item.id))
+    setSubmitError(null)
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    const name = formData.get("quote-name") as string
+    const email = formData.get("quote-email") as string
+    const phone = formData.get("quote-phone") as string
+    const notes = formData.get("quote-notes") as string
+
+    const payload = {
+      name,
+      email,
+      phone: phone || undefined,
+      notes: notes || undefined,
+      items: customItems.map((item) => ({
+        productId: item.product.id,
+        productName: item.productName,
+        materialId: item.material?.id ?? null,
+        materialName: item.material?.name ?? null,
+        quantity: item.quantity,
+      })),
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to submit quote request")
+      }
+      setSubmitted(true)
+      customItems.forEach((item) => removeFromCart(item.id))
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit quote request")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -33,17 +73,17 @@ function QuoteContent() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
             <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="font-serif text-3xl text-foreground">Quote Request Sent!</h2>
+          <h2 className="font-serif text-3xl text-foreground">{t.quote.successTitle}</h2>
           <p className="mt-3 text-muted-foreground leading-relaxed">
-            Thank you for your quote request. Our team will review your order and contact you within 24 hours with a personalized quote and delivery timeline.
+            {t.quote.successMessage}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button asChild className="rounded-full px-8">
-              <Link href="/">Continue Shopping</Link>
+              <Link href="/">{t.quote.continueShopping}</Link>
             </Button>
             {items.filter((i) => !i.isCustomQuantity).length > 0 && (
               <Button asChild variant="outline" className="rounded-full px-8">
-                <Link href="/cart">Back to Cart</Link>
+                <Link href="/cart">{t.quote.backToCart}</Link>
               </Button>
             )}
           </div>
@@ -59,12 +99,12 @@ function QuoteContent() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
             <MessageCircle className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="font-serif text-2xl text-foreground">No Quote Items</h2>
+          <h2 className="font-serif text-2xl text-foreground">{t.quote.noItemsTitle}</h2>
           <p className="mt-2 text-muted-foreground">
-            You don't have any items with custom quantities that need a quote.
+            {t.quote.noItemsMessage}
           </p>
           <Button asChild className="mt-6 rounded-full px-8">
-            <Link href="/">Browse Products</Link>
+            <Link href="/">{t.quote.browseProducts}</Link>
           </Button>
         </div>
       </div>
@@ -76,20 +116,20 @@ function QuoteContent() {
       <div className="mb-8 flex items-center gap-4">
         <Link href="/cart" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
-          {t.checkout?.backToCart || "Back to Cart"}
+          {t.quote.backToCart}
         </Link>
       </div>
 
-      <h1 className="mb-2 font-serif text-3xl text-foreground">{t.cart.getQuote}</h1>
+      <h1 className="mb-2 font-serif text-3xl text-foreground">{t.quote.title}</h1>
       <p className="mb-8 text-muted-foreground">
-        {t.cart.getQuoteNote}
+        {t.quote.subtitle}
       </p>
 
       <div className="grid gap-8 lg:grid-cols-5">
         {/* Items to quote */}
         <div className="lg:col-span-3">
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-serif text-lg text-foreground">Items for Quote</h2>
+            <h2 className="mb-4 font-serif text-lg text-foreground">{t.quote.itemsForQuote}</h2>
             <div className="flex flex-col gap-4">
               {customItems.map((item) => (
                 <div key={item.id} className="flex gap-4 rounded-lg border border-border/50 bg-background p-3">
@@ -107,7 +147,7 @@ function QuoteContent() {
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                       {item.material && <span>{item.material.name}</span>}
                       <span className="font-medium text-amber-600 dark:text-amber-400">
-                        {item.quantity.toLocaleString()} {t.quantitySelector?.pieces || "pieces"} ({t.cart.customQuantityTag})
+                        {item.quantity.toLocaleString()} {t.quantitySelector?.pieces} ({t.cart.customQuantityTag})
                       </span>
                     </div>
                   </div>
@@ -127,37 +167,41 @@ function QuoteContent() {
         {/* Contact form */}
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-4 font-serif text-lg text-foreground">Contact Details</h2>
+            <h2 className="mb-4 font-serif text-lg text-foreground">{t.quote.contactDetails}</h2>
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="quote-name">Full Name</Label>
-                <Input id="quote-name" placeholder="Your full name" required className="h-10" />
+                <Label htmlFor="quote-name">{t.quote.fullName}</Label>
+                <Input id="quote-name" name="quote-name" placeholder={t.quote.fullNamePlaceholder} required className="h-10" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="quote-email">{t.checkout?.email || "Email"}</Label>
-                <Input id="quote-email" type="email" placeholder="you@example.com" required className="h-10" />
+                <Label htmlFor="quote-email">{t.checkout.email}</Label>
+                <Input id="quote-email" name="quote-email" type="email" placeholder={t.checkout.emailPlaceholder} required className="h-10" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="quote-phone">{t.checkout?.phone || "Phone"}</Label>
-                <Input id="quote-phone" type="tel" placeholder="+1 (555) 000-0000" required className="h-10" />
+                <Label htmlFor="quote-phone">{t.checkout.phone}</Label>
+                <Input id="quote-phone" name="quote-phone" type="tel" placeholder={t.checkout.phonePlaceholder} className="h-10" />
               </div>
 
               <Separator />
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="quote-notes">Additional Notes</Label>
+                <Label htmlFor="quote-notes">{t.quote.additionalNotes}</Label>
                 <Textarea
                   id="quote-notes"
-                  placeholder="Any specific requirements, deadlines, or special instructions..."
+                  name="quote-notes"
+                  placeholder={t.quote.notesPlaceholder}
                   rows={4}
                   className="resize-none"
                 />
               </div>
 
-              <Button type="submit" className="w-full rounded-full">
+              {submitError && (
+                <p className="text-sm text-destructive">{submitError}</p>
+              )}
+              <Button type="submit" className="w-full rounded-full" disabled={isSubmitting}>
                 <Send className="mr-2 h-4 w-4" />
-                Submit Quote Request
+                {isSubmitting ? t.quote.sending : t.quote.submitQuote}
               </Button>
             </div>
           </form>

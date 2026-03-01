@@ -9,10 +9,13 @@ import { LanguageProvider } from "@/lib/language-context"
 import { CartProvider } from "@/lib/cart-context"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { categories, portfolioItems } from "@/lib/portfolio-data"
+import { categories, getPortfolioItems } from "@/lib/portfolio-data"
+import { useLanguage } from "@/lib/language-context"
 
 function PortfolioContent() {
+  const { t, locale } = useLanguage()
   const [activeCategory, setActiveCategory] = useState("all")
+  const portfolioItems = getPortfolioItems(locale)
 
   const filtered =
     activeCategory === "all"
@@ -32,14 +35,14 @@ function PortfolioContent() {
               className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Home
+              {t.portfolio.backToHome}
             </Link>
 
             <div className="text-center">
-              <span className="mb-2 inline-block text-sm font-medium text-primary">Our Portfolio</span>
-              <h1 className="font-serif text-4xl text-foreground md:text-5xl">Completed Products</h1>
+              <span className="mb-2 inline-block text-sm font-medium text-primary">{t.portfolio.badge}</span>
+              <h1 className="font-serif text-4xl text-foreground md:text-5xl">{t.portfolio.title}</h1>
               <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-                Browse our collection of completed printing projects. Each piece showcases our commitment to quality and craftsmanship.
+                {t.portfolio.subtitle}
               </p>
             </div>
           </div>
@@ -60,20 +63,20 @@ function PortfolioContent() {
                       : "bg-card text-muted-foreground border border-border hover:text-foreground"
                   }`}
                 >
-                  {cat.label}
+                  {t.portfolio.categories[cat.id as keyof typeof t.portfolio.categories] ?? cat.label}
                 </button>
               ))}
             </div>
 
             {/* Results count */}
             <p className="mb-6 text-center text-sm text-muted-foreground">
-              Showing {filtered.length} {filtered.length === 1 ? "project" : "projects"}
+              {t.portfolio.showing} {filtered.length} {filtered.length === 1 ? t.portfolio.project : t.portfolio.projects}
             </p>
 
             {/* Gallery Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((item) => {
-                const catLabel = categories.find((c) => c.id === item.category)?.label ?? item.category
+                const catLabel = t.portfolio.categories[item.category as keyof typeof t.portfolio.categories] ?? item.category
                 return (
                   <div
                     key={item.id}
@@ -95,8 +98,8 @@ function PortfolioContent() {
                         {item.description}
                       </p>
                       <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Client: {item.client}</span>
-                        <span>{new Date(item.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                        <span>{t.portfolio.client} {item.client}</span>
+                        <span>{new Date(item.date).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", { month: "short", year: "numeric" })}</span>
                       </div>
                     </div>
                   </div>
@@ -106,8 +109,8 @@ function PortfolioContent() {
 
             {filtered.length === 0 && (
               <div className="py-20 text-center">
-                <p className="font-serif text-xl text-foreground">No projects found</p>
-                <p className="mt-2 text-muted-foreground">Try selecting a different category.</p>
+                <p className="font-serif text-xl text-foreground">{t.portfolio.noProjects}</p>
+                <p className="mt-2 text-muted-foreground">{t.portfolio.tryDifferent}</p>
               </div>
             )}
           </div>

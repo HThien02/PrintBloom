@@ -191,7 +191,7 @@ function CartContent() {
                         <div key={item.id} className="flex justify-between text-sm">
                           <span className="text-foreground">{item.productName}</span>
                           <span className="font-medium text-amber-600 dark:text-amber-400">
-                            {item.quantity.toLocaleString()} {t.quantitySelector?.pieces || "pcs"}
+                            {item.quantity.toLocaleString()} {t.quantitySelector?.pieces}
                           </span>
                         </div>
                       ))}
@@ -300,7 +300,7 @@ function CartItemCard({ item, t, onUpdateQuantity, onRemove, isQuoteItem }: Cart
               onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
               disabled={item.quantity <= 1}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40"
-              aria-label="Decrease quantity"
+              aria-label={t.common.decreaseQuantity}
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
@@ -310,7 +310,7 @@ function CartItemCard({ item, t, onUpdateQuantity, onRemove, isQuoteItem }: Cart
             <button
               onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted"
-              aria-label="Increase quantity"
+              aria-label={t.common.increaseQuantity}
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -319,7 +319,7 @@ function CartItemCard({ item, t, onUpdateQuantity, onRemove, isQuoteItem }: Cart
           <div className="flex items-center gap-4">
             {isQuoteItem ? (
               <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                {t.quantitySelector?.quotePending || "Quote pending"}
+                {t.quantitySelector?.quotePending}
               </span>
             ) : (
               <span className="font-medium text-foreground">

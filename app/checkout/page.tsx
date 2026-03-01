@@ -25,9 +25,8 @@ function CheckoutContent() {
   const { items, getCartTotal, clearCart } = useCart()
   const [shippingMethod, setShippingMethod] = useState("standard")
   const [showSuccess, setShowSuccess] = useState(false)
-
-  // Mock: in production this would come from an auth context
-  const isLoggedIn = false
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const subtotal = getCartTotal()
   const shippingCost =
@@ -36,10 +35,65 @@ function CheckoutContent() {
   const tax = subtotal * taxRate
   const total = subtotal + shippingCost + tax
 
-  function handlePlaceOrder(e: React.FormEvent) {
+  async function handlePlaceOrder(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setShowSuccess(true)
-    clearCart()
+    setSubmitError(null)
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    const address = formData.get("address") as string
+    const apartment = formData.get("apartment") as string
+    const city = formData.get("city") as string
+    const state = formData.get("state") as string
+    const zip = formData.get("zip") as string
+
+    const payload = {
+      email,
+      firstName,
+      lastName,
+      phone: phone || undefined,
+      address,
+      apartment: apartment || undefined,
+      city,
+      state,
+      zip,
+      shippingMethod,
+      subtotal,
+      shippingCost,
+      tax,
+      total,
+      items: items.map((item) => ({
+        productId: item.product.id,
+        productName: item.productName,
+        materialId: item.material?.id ?? null,
+        materialName: item.material?.name ?? null,
+        designOption: item.designOption ?? null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to place order")
+      }
+      setShowSuccess(true)
+      clearCart()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to place order")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -79,11 +133,11 @@ function CheckoutContent() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="email">{t.checkout.email}</Label>
-                    <Input id="email" type="email" placeholder={t.checkout.emailPlaceholder} required className="h-11" />
+                    <Input id="email" name="email" type="email" placeholder={t.checkout.emailPlaceholder} required className="h-11" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="phone">{t.checkout.phone}</Label>
-                    <Input id="phone" type="tel" placeholder={t.checkout.phonePlaceholder} className="h-11" />
+                    <Input id="phone" name="phone" type="tel" placeholder={t.checkout.phonePlaceholder} className="h-11" />
                   </div>
                 </div>
               </section>
@@ -98,33 +152,33 @@ function CheckoutContent() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="firstName">{t.checkout.firstName}</Label>
-                      <Input id="firstName" placeholder={t.checkout.firstName} required className="h-11" />
+                      <Input id="firstName" name="firstName" placeholder={t.checkout.firstName} required className="h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="lastName">{t.checkout.lastName}</Label>
-                      <Input id="lastName" placeholder={t.checkout.lastName} required className="h-11" />
+                      <Input id="lastName" name="lastName" placeholder={t.checkout.lastName} required className="h-11" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="address">{t.checkout.address}</Label>
-                    <Input id="address" placeholder={t.checkout.addressPlaceholder} required className="h-11" />
+                    <Input id="address" name="address" placeholder={t.checkout.addressPlaceholder} required className="h-11" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="apartment">{t.checkout.apartment}</Label>
-                    <Input id="apartment" placeholder={t.checkout.apartmentPlaceholder} className="h-11" />
+                    <Input id="apartment" name="apartment" placeholder={t.checkout.apartmentPlaceholder} className="h-11" />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="city">{t.checkout.city}</Label>
-                      <Input id="city" placeholder={t.checkout.cityPlaceholder} required className="h-11" />
+                      <Input id="city" name="city" placeholder={t.checkout.cityPlaceholder} required className="h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="state">{t.checkout.state}</Label>
-                      <Input id="state" placeholder={t.checkout.statePlaceholder} required className="h-11" />
+                      <Input id="state" name="state" placeholder={t.checkout.statePlaceholder} required className="h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="zip">{t.checkout.zip}</Label>
-                      <Input id="zip" placeholder={t.checkout.zipPlaceholder} required className="h-11" />
+                      <Input id="zip" name="zip" placeholder={t.checkout.zipPlaceholder} required className="h-11" />
                     </div>
                   </div>
                 </div>
@@ -232,7 +286,7 @@ function CheckoutContent() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mb-4 text-sm text-muted-foreground">No items in cart.</p>
+                  <p className="mb-4 text-sm text-muted-foreground">{t.checkout.noItemsInCart}</p>
                 )}
 
                 <Separator className="my-4" />
@@ -261,8 +315,11 @@ function CheckoutContent() {
                   <span className="font-serif text-xl text-foreground">${total.toFixed(2)}</span>
                 </div>
 
-                <Button type="submit" size="lg" className="w-full rounded-full" disabled={items.length === 0}>
-                  {t.checkout.placeOrder}
+                {submitError && (
+                  <p className="mb-3 text-sm text-destructive">{submitError}</p>
+                )}
+                <Button type="submit" size="lg" className="w-full rounded-full" disabled={items.length === 0 || isSubmitting}>
+                  {isSubmitting ? t.checkout.placingOrder : t.checkout.placeOrder}
                 </Button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +14,7 @@ export interface Product {
   popular?: boolean
 }
 
-const products: Product[] = [
+const fallbackProducts: Product[] = [
   { id: "business-cards", image: "/images/business-cards.jpg", startingPrice: "$24.99", popular: true },
   { id: "flyers", image: "/images/flyers.jpg", startingPrice: "$19.99" },
   { id: "banners", image: "/images/banners.jpg", startingPrice: "$39.99" },
@@ -28,6 +29,20 @@ interface ProductCatalogProps {
 
 export function ProductCatalog({ onSelectProduct }: ProductCatalogProps) {
   const { t } = useLanguage()
+  const [products, setProducts] = useState<Product[]>(fallbackProducts)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/products?catalog=true")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: Product[] | null) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <section id="products" className="bg-muted/30 px-4 py-20">
@@ -38,6 +53,11 @@ export function ProductCatalog({ onSelectProduct }: ProductCatalogProps) {
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{t.catalog.subtitle}</p>
         </div>
 
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => {
             const productText = t.catalog.products[product.id as keyof typeof t.catalog.products]
@@ -78,6 +98,7 @@ export function ProductCatalog({ onSelectProduct }: ProductCatalogProps) {
             )
           })}
         </div>
+        )}
       </div>
     </section>
   )

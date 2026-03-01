@@ -1,0 +1,73 @@
+// PrintBloom - PostgreSQL
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  name           String
+  category       String   // slug: business-cards, flyers, banners, ...
+  image          String
+  price          Decimal  @db.Decimal(10, 2)
+  stock          Int      @default(0)
+  status         String   @default("active") // active | draft | archived
+  popular        Boolean  @default(false)
+  quantityTiers  Json     // [{ quantity: number, price: number }]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  orderItems     OrderItem[]
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  email          String
+  firstName      String
+  lastName       String
+  phone          String?
+  address        String
+  apartment      String?
+  city           String
+  state          String
+  zip            String
+  shippingMethod String    // standard | express | overnight
+  subtotal       Decimal   @db.Decimal(10, 2)
+  shippingCost   Decimal   @db.Decimal(10, 2)
+  tax            Decimal   @db.Decimal(10, 2)
+  total          Decimal   @db.Decimal(10, 2)
+  status         String    @default("pending") // pending | processing | printed | shipped | delivered | cancelled
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName  String
+  materialId   String?
+  materialName String?
+  designOption String?  // upload | hire
+  quantity     Int
+  unitPrice    Decimal  @db.Decimal(10, 2)
+  createdAt    DateTime @default(now())
+}
+
+model QuoteRequest {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  notes     String?
+  items     Json     // [{ productId, productName, materialId, materialName, quantity }]
+  status    String   @default("new") // new | contacted | quoted | closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
