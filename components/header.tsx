@@ -17,8 +17,9 @@ export function Header() {
   const navLinks = [
     { label: t.nav.products, href: "#products" },
     { label: t.nav.howItWorks, href: "#how-it-works" },
-    { label: t.nav.about, href: "#about" },
-    { label: t.nav.contact, href: "#contact" },
+    { label: t.nav.about, href: "/about" },
+    { label: "Portfolio", href: "/portfolio" },
+    { label: "Feedback", href: "/feedback" },
   ]
 
   return (
@@ -32,11 +33,17 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.href.startsWith("/") ? (
+              <Link key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {link.label}
+              </Link>
+            ) : (
+              <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {link.label}
+              </a>
+            )
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -80,16 +87,27 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-border bg-background px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-3">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              link.href.startsWith("/") ? (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </a>
+              )
+            )}
             <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
               {t.nav.login}
             </Link>

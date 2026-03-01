@@ -1,0 +1,130 @@
+"use client"
+
+import Link from "next/link"
+import Image from "next/image"
+import { useState } from "react"
+import { ArrowLeft } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { LanguageProvider } from "@/lib/language-context"
+import { CartProvider } from "@/lib/cart-context"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import { categories, portfolioItems } from "@/lib/portfolio-data"
+
+function PortfolioContent() {
+  const [activeCategory, setActiveCategory] = useState("all")
+
+  const filtered =
+    activeCategory === "all"
+      ? portfolioItems
+      : portfolioItems.filter((item) => item.category === activeCategory)
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main>
+        {/* Hero */}
+        <section className="px-4 py-16 md:py-20">
+          <div className="mx-auto max-w-6xl">
+            <Link
+              href="/"
+              className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
+
+            <div className="text-center">
+              <span className="mb-2 inline-block text-sm font-medium text-primary">Our Portfolio</span>
+              <h1 className="font-serif text-4xl text-foreground md:text-5xl">Completed Products</h1>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
+                Browse our collection of completed printing projects. Each piece showcases our commitment to quality and craftsmanship.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Filters + Gallery */}
+        <section className="bg-muted/30 px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            {/* Category Filters */}
+            <div className="mb-10 flex flex-wrap justify-center gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                    activeCategory === cat.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground border border-border hover:text-foreground"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Results count */}
+            <p className="mb-6 text-center text-sm text-muted-foreground">
+              Showing {filtered.length} {filtered.length === 1 ? "project" : "projects"}
+            </p>
+
+            {/* Gallery Grid */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((item) => {
+                const catLabel = categories.find((c) => c.id === item.category)?.label ?? item.category
+                return (
+                  <div
+                    key={item.id}
+                    className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lg"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                      <Badge className="absolute left-3 top-3 z-10">{catLabel}</Badge>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                    <div className="p-5">
+                      <h3 className="font-serif text-lg text-foreground">{item.title}</h3>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                        {item.description}
+                      </p>
+                      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Client: {item.client}</span>
+                        <span>{new Date(item.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {filtered.length === 0 && (
+              <div className="py-20 text-center">
+                <p className="font-serif text-xl text-foreground">No projects found</p>
+                <p className="mt-2 text-muted-foreground">Try selecting a different category.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+export default function PortfolioPage() {
+  return (
+    <LanguageProvider>
+      <CartProvider>
+        <PortfolioContent />
+      </CartProvider>
+    </LanguageProvider>
+  )
+}

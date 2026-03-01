@@ -9,6 +9,7 @@ import { HeroSection } from "@/components/hero-section"
 import { ProductCatalog, type Product } from "@/components/product-catalog"
 import { ProductCustomizer } from "@/components/product-customizer"
 import { HowItWorks } from "@/components/how-it-works"
+import { PortfolioSlider } from "@/components/portfolio-slider"
 import { Footer } from "@/components/footer"
 
 export default function Home() {
@@ -38,6 +39,7 @@ export default function Home() {
               <>
                 <HeroSection />
                 <ProductCatalog onSelectProduct={handleSelectProduct} />
+                <PortfolioSlider />
                 <HowItWorks />
               </>
             )}
