@@ -5,7 +5,7 @@ import Image from "next/image"
 import { ArrowLeft, ShoppingBag, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { MaterialSelector, type Material } from "@/components/material-selector"
+import { MaterialSelector, type Material, type QuantityOption, quantityOptionsByProduct } from "@/components/material-selector"
 import { DesignOptionSelector } from "@/components/design-option-selector"
 import type { Product } from "@/components/product-catalog"
 import { useLanguage } from "@/lib/language-context"
@@ -19,6 +19,9 @@ interface ProductCustomizerProps {
 
 export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  const [selectedQuantityOption, setSelectedQuantityOption] = useState<QuantityOption | null>(null)
+  const [customQuantity, setCustomQuantity] = useState("")
+  const [isCustomQuantity, setIsCustomQuantity] = useState(false)
   const [designOption, setDesignOption] = useState<"upload" | "hire" | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [designBrief, setDesignBrief] = useState("")
@@ -28,13 +31,21 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
   const { addToCart } = useCart()
 
   const productText = t.catalog.products[product.id as keyof typeof t.catalog.products]
-  const canProceedToStep2 = selectedMaterial !== null
+
+  const hasQuantitySelected = isCustomQuantity
+    ? customQuantity.trim().length > 0 && parseInt(customQuantity) > 0
+    : selectedQuantityOption !== null
+
+  const canProceedToStep2 = selectedMaterial !== null && hasQuantitySelected
   const canSubmit = designOption !== null && (designOption === "upload" ? uploadedFile !== null : designBrief.trim().length > 0)
 
+  const currentQuantity = isCustomQuantity ? parseInt(customQuantity) || 0 : selectedQuantityOption?.quantity || 0
+  const currentPrice = isCustomQuantity ? null : selectedQuantityOption?.price || 0
+
   function handleAddToCart() {
-    const basePrice = parseFloat(product.startingPrice.replace("$", ""))
+    const basePrice = isCustomQuantity ? 0 : (selectedQuantityOption?.price || 0)
     const materialMod = selectedMaterial
-      ? parseFloat(selectedMaterial.priceModifier.replace("+$", "").replace("-$", (m) => `-${m}`).replace("$", ""))
+      ? parseFloat(selectedMaterial.priceModifier.replace("+$", "").replace("-$", (m: string) => `-${m}`).replace("$", ""))
       : 0
     const designMod = designOption === "hire" ? 49.99 : 0
     const unitPrice = basePrice + materialMod + designMod
@@ -44,11 +55,15 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
       productName: productText.name,
       material: selectedMaterial,
       designOption,
-      quantity: 1,
+      quantity: currentQuantity,
       unitPrice,
     })
 
-    toast.success(`${productText.name} added to cart!`)
+    if (isCustomQuantity) {
+      toast.success(t.quantitySelector?.addedCustom || `${productText.name} added! We'll contact you with a quote for ${currentQuantity} pieces.`)
+    } else {
+      toast.success(`${productText.name} added to cart!`)
+    }
     setSubmitted(true)
   }
 
@@ -62,7 +77,9 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
           <h2 className="font-serif text-2xl text-foreground">{t.customizer.orderSubmitted}</h2>
           <p className="mt-2 text-muted-foreground">
             {t.customizer.thankYou} {productText.name.toLowerCase()} {t.customizer.customization}
-            {designOption === "hire" ? t.customizer.hireResponse : t.customizer.uploadResponse}
+            {isCustomQuantity
+              ? (t.quantitySelector?.customConfirmation || " Our team will contact you shortly with a personalized quote for your custom quantity.")
+              : designOption === "hire" ? t.customizer.hireResponse : t.customizer.uploadResponse}
           </p>
           <Button className="mt-6 rounded-full px-8" onClick={onBack}>
             {t.customizer.browseMore}
@@ -98,8 +115,16 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
               <div className="mt-4">
                 <h2 className="font-serif text-2xl text-foreground">{productText.name}</h2>
                 <p className="text-sm text-muted-foreground">{productText.description}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">{t.catalog.from} {product.startingPrice}</span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {currentPrice !== null && currentPrice > 0 ? (
+                    <span className="text-lg font-semibold text-foreground">${currentPrice.toFixed(2)}</span>
+                  ) : isCustomQuantity && currentQuantity > 0 ? (
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                      {t.quantitySelector?.quotePending || "Quote pending"}
+                    </span>
+                  ) : (
+                    <span className="text-lg font-semibold text-foreground">{t.catalog.from} {product.startingPrice}</span>
+                  )}
                   {selectedMaterial && (
                     <span className="text-sm text-primary">{selectedMaterial.priceModifier}</span>
                   )}
@@ -118,6 +143,27 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t.customizer.material}</span>
                       <span className="text-foreground">{selectedMaterial.name}</span>
+                    </div>
+                  )}
+                  {hasQuantitySelected && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        {t.quantitySelector?.quantityLabel || "Quantity"}
+                      </span>
+                      <span className="text-foreground">
+                        {currentQuantity.toLocaleString()} {t.quantitySelector?.pieces || "pcs"}
+                        {isCustomQuantity && (
+                          <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">
+                            ({t.quantitySelector?.custom || "custom"})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {!isCustomQuantity && currentPrice !== null && currentPrice > 0 && (
+                    <div className="flex justify-between border-t border-border pt-2">
+                      <span className="text-muted-foreground">{t.quantitySelector?.priceLabel || "Price"}</span>
+                      <span className="font-semibold text-foreground">${currentPrice.toFixed(2)}</span>
                     </div>
                   )}
                   {designOption && (
@@ -141,9 +187,11 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
                 <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
                   step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
-                  {selectedMaterial ? <Check className="h-3.5 w-3.5" /> : "1"}
+                  {canProceedToStep2 ? <Check className="h-3.5 w-3.5" /> : "1"}
                 </span>
-                <span className="text-sm font-medium text-foreground">{t.customizer.materialStep}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {t.customizer.materialStep} & {t.quantitySelector?.quantityLabel || "Quantity"}
+                </span>
               </button>
 
               <Separator className="flex-1" />
@@ -164,7 +212,17 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
 
             {step === 1 && (
               <div className="space-y-6">
-                <MaterialSelector productId={product.id} selectedMaterial={selectedMaterial} onSelectMaterial={setSelectedMaterial} />
+                <MaterialSelector
+                  productId={product.id}
+                  selectedMaterial={selectedMaterial}
+                  onSelectMaterial={setSelectedMaterial}
+                  selectedQuantityOption={selectedQuantityOption}
+                  onSelectQuantityOption={setSelectedQuantityOption}
+                  customQuantity={customQuantity}
+                  onCustomQuantityChange={setCustomQuantity}
+                  isCustomQuantity={isCustomQuantity}
+                  onToggleCustomQuantity={setIsCustomQuantity}
+                />
                 <Button className="w-full rounded-full" disabled={!canProceedToStep2} onClick={() => setStep(2)}>
                   {t.customizer.continueToDesign}
                 </Button>

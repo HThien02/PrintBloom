@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useState } from "react"
-import { Plus, Pencil, Trash2, Search, X } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, X, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import { AdminLayout } from "@/components/admin-layout"
-import { adminProducts, type AdminProduct } from "@/lib/admin-data"
+import { adminProducts, type AdminProduct, type QuantityTier } from "@/lib/admin-data"
 
 const categoryOptions = [
   { value: "business-cards", label: "Business Cards" },
@@ -29,6 +29,12 @@ const emptyProduct: AdminProduct = {
   stock: 0,
   image: "/images/business-cards.jpg",
   status: "active",
+  quantityTiers: [
+    { quantity: 100, price: 0 },
+    { quantity: 250, price: 0 },
+    { quantity: 500, price: 0 },
+    { quantity: 1000, price: 0 },
+  ],
 }
 
 export default function AdminProductsPage() {
@@ -46,23 +52,28 @@ export default function AdminProductsPage() {
   })
 
   function openAdd() {
-    setEditProduct({ ...emptyProduct, id: `P${String(products.length + 1).padStart(3, "0")}` })
+    setEditProduct({ ...emptyProduct, id: `P${String(products.length + 1).padStart(3, "0")}`, quantityTiers: emptyProduct.quantityTiers.map(t => ({ ...t })) })
     setDialogOpen(true)
   }
 
   function openEdit(product: AdminProduct) {
-    setEditProduct({ ...product })
+    setEditProduct({ ...product, quantityTiers: product.quantityTiers.map(t => ({ ...t })) })
     setDialogOpen(true)
   }
 
   function handleSave() {
     if (!editProduct) return
+    // Set base price from first tier if available
+    const updatedProduct = {
+      ...editProduct,
+      price: editProduct.quantityTiers.length > 0 ? editProduct.quantityTiers[0].price : editProduct.price,
+    }
     setProducts((prev) => {
-      const exists = prev.find((p) => p.id === editProduct.id)
+      const exists = prev.find((p) => p.id === updatedProduct.id)
       if (exists) {
-        return prev.map((p) => (p.id === editProduct.id ? editProduct : p))
+        return prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
       }
-      return [...prev, editProduct]
+      return [...prev, updatedProduct]
     })
     setDialogOpen(false)
     setEditProduct(null)
@@ -71,6 +82,29 @@ export default function AdminProductsPage() {
   function handleDelete(id: string) {
     setProducts((prev) => prev.filter((p) => p.id !== id))
     setDeleteConfirm(null)
+  }
+
+  function updateTier(index: number, field: keyof QuantityTier, value: number) {
+    if (!editProduct) return
+    const newTiers = [...editProduct.quantityTiers]
+    newTiers[index] = { ...newTiers[index], [field]: value }
+    setEditProduct({ ...editProduct, quantityTiers: newTiers })
+  }
+
+  function addTier() {
+    if (!editProduct) return
+    const lastTier = editProduct.quantityTiers[editProduct.quantityTiers.length - 1]
+    const newQty = lastTier ? lastTier.quantity * 2 : 100
+    setEditProduct({
+      ...editProduct,
+      quantityTiers: [...editProduct.quantityTiers, { quantity: newQty, price: 0 }],
+    })
+  }
+
+  function removeTier(index: number) {
+    if (!editProduct || editProduct.quantityTiers.length <= 1) return
+    const newTiers = editProduct.quantityTiers.filter((_, i) => i !== index)
+    setEditProduct({ ...editProduct, quantityTiers: newTiers })
   }
 
   const statusStyles: Record<string, string> = {
@@ -124,7 +158,7 @@ export default function AdminProductsPage() {
                   <tr className="border-b border-border text-left">
                     <th className="p-4 font-medium text-muted-foreground">Product</th>
                     <th className="p-4 font-medium text-muted-foreground">Category</th>
-                    <th className="p-4 font-medium text-muted-foreground">Price</th>
+                    <th className="p-4 font-medium text-muted-foreground">Quantity Tiers</th>
                     <th className="p-4 font-medium text-muted-foreground">Stock</th>
                     <th className="p-4 font-medium text-muted-foreground">Status</th>
                     <th className="p-4 font-medium text-muted-foreground">Actions</th>
@@ -147,7 +181,20 @@ export default function AdminProductsPage() {
                           </div>
                         </td>
                         <td className="p-4 text-muted-foreground">{catLabel}</td>
-                        <td className="p-4 text-foreground">${product.price.toFixed(2)}</td>
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {product.quantityTiers.map((tier, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                              >
+                                <span className="font-medium text-foreground">{tier.quantity}</span>
+                                <span className="text-muted-foreground">/</span>
+                                <span className="text-primary">${tier.price.toFixed(2)}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </td>
                         <td className="p-4">
                           <span className={product.stock === 0 ? "text-red-500 font-medium" : "text-foreground"}>
                             {product.stock}
@@ -194,7 +241,7 @@ export default function AdminProductsPage() {
 
       {/* Add/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif">
               {editProduct && adminProducts.find((p) => p.id === editProduct.id) ? "Edit Product" : "Add Product"}
@@ -207,7 +254,7 @@ export default function AdminProductsPage() {
                 e.preventDefault()
                 handleSave()
               }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-5"
             >
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-name">Product Name</Label>
@@ -236,30 +283,16 @@ export default function AdminProductsPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="prod-price">Price ($)</Label>
-                  <Input
-                    id="prod-price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editProduct.price}
-                    onChange={(e) => setEditProduct({ ...editProduct, price: parseFloat(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="prod-stock">Stock</Label>
-                  <Input
-                    id="prod-stock"
-                    type="number"
-                    min="0"
-                    value={editProduct.stock}
-                    onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="prod-stock">Stock</Label>
+                <Input
+                  id="prod-stock"
+                  type="number"
+                  min="0"
+                  value={editProduct.stock}
+                  onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) || 0 })}
+                  required
+                />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -277,6 +310,76 @@ export default function AdminProductsPage() {
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Quantity Tiers section */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-primary" />
+                    <Label className="text-base font-semibold">Quantity & Pricing Tiers</Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addTier}
+                    className="h-7 gap-1 rounded-full px-2.5 text-xs"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Tier
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Define fixed quantity options with their prices. Customers can also enter a custom quantity (they will be contacted for a quote).
+                </p>
+
+                <div className="flex flex-col gap-2">
+                  {/* Header row */}
+                  <div className="grid grid-cols-[1fr_1fr_32px] gap-2 px-1">
+                    <span className="text-xs font-medium text-muted-foreground">Quantity</span>
+                    <span className="text-xs font-medium text-muted-foreground">Price ($)</span>
+                    <span className="sr-only">Remove</span>
+                  </div>
+
+                  {editProduct.quantityTiers.map((tier, index) => (
+                    <div key={index} className="grid grid-cols-[1fr_1fr_32px] items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="Qty"
+                        value={tier.quantity || ""}
+                        onChange={(e) => updateTier(index, "quantity", parseInt(e.target.value) || 0)}
+                        className="h-9"
+                      />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Price"
+                        value={tier.price || ""}
+                        onChange={(e) => updateTier(index, "price", parseFloat(e.target.value) || 0)}
+                        className="h-9"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeTier(index)}
+                        disabled={editProduct.quantityTiers.length <= 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                        aria-label={`Remove tier ${index + 1}`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30">
+                  <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                    Customers will also see a &ldquo;Custom Quantity&rdquo; option where they can enter any amount. Your team will be notified to provide a personalized quote.
+                  </p>
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

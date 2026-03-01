@@ -1,5 +1,10 @@
 // Demo data for admin panel
 
+export interface QuantityTier {
+  quantity: number
+  price: number
+}
+
 export interface AdminProduct {
   id: string
   name: string
@@ -8,6 +13,7 @@ export interface AdminProduct {
   stock: number
   image: string
   status: "active" | "draft" | "archived"
+  quantityTiers: QuantityTier[]
 }
 
 export interface AdminOrder {
@@ -28,16 +34,16 @@ export interface FinancialEntry {
 }
 
 export const adminProducts: AdminProduct[] = [
-  { id: "P001", name: "Premium Business Cards", category: "business-cards", price: 24.99, stock: 500, image: "/images/business-cards.jpg", status: "active" },
-  { id: "P002", name: "Standard Flyers", category: "flyers", price: 19.99, stock: 300, image: "/images/flyers.jpg", status: "active" },
-  { id: "P003", name: "Vinyl Banners", category: "banners", price: 39.99, stock: 120, image: "/images/banners.jpg", status: "active" },
-  { id: "P004", name: "Die-Cut Stickers", category: "stickers", price: 14.99, stock: 800, image: "/images/stickers.jpg", status: "active" },
-  { id: "P005", name: "Wedding Invitations", category: "invitations", price: 29.99, stock: 200, image: "/images/invitations.jpg", status: "active" },
-  { id: "P006", name: "Custom Gift Boxes", category: "packaging", price: 49.99, stock: 80, image: "/images/packaging.jpg", status: "active" },
-  { id: "P007", name: "Embossed Business Cards", category: "business-cards", price: 34.99, stock: 250, image: "/images/business-cards.jpg", status: "active" },
-  { id: "P008", name: "Tri-Fold Brochures", category: "flyers", price: 24.99, stock: 0, image: "/images/flyers.jpg", status: "draft" },
-  { id: "P009", name: "Roll-Up Banners", category: "banners", price: 59.99, stock: 60, image: "/images/banners.jpg", status: "active" },
-  { id: "P010", name: "Holographic Stickers", category: "stickers", price: 19.99, stock: 400, image: "/images/stickers.jpg", status: "archived" },
+  { id: "P001", name: "Premium Business Cards", category: "business-cards", price: 24.99, stock: 500, image: "/images/business-cards.jpg", status: "active", quantityTiers: [{ quantity: 100, price: 24.99 }, { quantity: 250, price: 49.99 }, { quantity: 500, price: 89.99 }, { quantity: 1000, price: 149.99 }] },
+  { id: "P002", name: "Standard Flyers", category: "flyers", price: 19.99, stock: 300, image: "/images/flyers.jpg", status: "active", quantityTiers: [{ quantity: 100, price: 19.99 }, { quantity: 250, price: 39.99 }, { quantity: 500, price: 69.99 }, { quantity: 1000, price: 119.99 }] },
+  { id: "P003", name: "Vinyl Banners", category: "banners", price: 39.99, stock: 120, image: "/images/banners.jpg", status: "active", quantityTiers: [{ quantity: 1, price: 39.99 }, { quantity: 3, price: 99.99 }, { quantity: 5, price: 159.99 }, { quantity: 10, price: 289.99 }] },
+  { id: "P004", name: "Die-Cut Stickers", category: "stickers", price: 14.99, stock: 800, image: "/images/stickers.jpg", status: "active", quantityTiers: [{ quantity: 50, price: 14.99 }, { quantity: 100, price: 24.99 }, { quantity: 250, price: 49.99 }, { quantity: 500, price: 84.99 }] },
+  { id: "P005", name: "Wedding Invitations", category: "invitations", price: 29.99, stock: 200, image: "/images/invitations.jpg", status: "active", quantityTiers: [{ quantity: 50, price: 29.99 }, { quantity: 100, price: 49.99 }, { quantity: 200, price: 89.99 }, { quantity: 500, price: 199.99 }] },
+  { id: "P006", name: "Custom Gift Boxes", category: "packaging", price: 49.99, stock: 80, image: "/images/packaging.jpg", status: "active", quantityTiers: [{ quantity: 25, price: 49.99 }, { quantity: 50, price: 89.99 }, { quantity: 100, price: 159.99 }, { quantity: 250, price: 349.99 }] },
+  { id: "P007", name: "Embossed Business Cards", category: "business-cards", price: 34.99, stock: 250, image: "/images/business-cards.jpg", status: "active", quantityTiers: [{ quantity: 100, price: 34.99 }, { quantity: 250, price: 69.99 }, { quantity: 500, price: 119.99 }, { quantity: 1000, price: 199.99 }] },
+  { id: "P008", name: "Tri-Fold Brochures", category: "flyers", price: 24.99, stock: 0, image: "/images/flyers.jpg", status: "draft", quantityTiers: [{ quantity: 100, price: 24.99 }, { quantity: 250, price: 49.99 }, { quantity: 500, price: 89.99 }, { quantity: 1000, price: 149.99 }] },
+  { id: "P009", name: "Roll-Up Banners", category: "banners", price: 59.99, stock: 60, image: "/images/banners.jpg", status: "active", quantityTiers: [{ quantity: 1, price: 59.99 }, { quantity: 3, price: 149.99 }, { quantity: 5, price: 229.99 }, { quantity: 10, price: 429.99 }] },
+  { id: "P010", name: "Holographic Stickers", category: "stickers", price: 19.99, stock: 400, image: "/images/stickers.jpg", status: "archived", quantityTiers: [{ quantity: 50, price: 19.99 }, { quantity: 100, price: 34.99 }, { quantity: 250, price: 69.99 }, { quantity: 500, price: 119.99 }] },
 ]
 
 export const adminOrders: AdminOrder[] = [
