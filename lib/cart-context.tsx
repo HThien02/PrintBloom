@@ -12,6 +12,7 @@ export interface CartItem {
   designOption: "upload" | "hire" | null
   quantity: number
   unitPrice: number
+  isCustomQuantity?: boolean
 }
 
 interface CartContextType {

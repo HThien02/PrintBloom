@@ -57,6 +57,7 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
       designOption,
       quantity: currentQuantity,
       unitPrice,
+      isCustomQuantity,
     })
 
     if (isCustomQuantity) {

@@ -26,6 +26,9 @@ function CheckoutContent() {
   const [shippingMethod, setShippingMethod] = useState("standard")
   const [showSuccess, setShowSuccess] = useState(false)
 
+  // Mock: in production this would come from an auth context
+  const isLoggedIn = false
+
   const subtotal = getCartTotal()
   const shippingCost =
     shippingMethod === "express" ? 12.99 : shippingMethod === "overnight" ? 24.99 : 0
