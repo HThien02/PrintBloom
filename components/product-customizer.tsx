@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { MaterialSelector, type Material, type QuantityOption, quantityOptionsByProduct } from "@/components/material-selector"
 import { DesignOptionSelector } from "@/components/design-option-selector"
-import { TextureUploadSelector } from "@/components/texture-upload-selector"
 import type { Product } from "@/components/product-catalog"
 import { useLanguage } from "@/lib/language-context"
 import { useCurrency } from "@/lib/currency-context"
@@ -30,7 +29,6 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
   const [designBrief, setDesignBrief] = useState("")
   const [step, setStep] = useState<1 | 2>(1)
   const [submitted, setSubmitted] = useState(false)
-  const [mockupType, setMockupType] = useState<'upload' | 'texture'>('upload')
   const { t } = useLanguage()
   const { formatPrice } = useCurrency()
   const { addToCart } = useCart()
@@ -241,53 +239,15 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
 
             {step === 2 && (
               <div className="space-y-6">
-                {/* Mockup Type Selector */}
-                <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                  <button
-                    onClick={() => setMockupType('upload')}
-                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                      mockupType === 'upload'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Standard Upload
-                  </button>
-                  <button
-                    onClick={() => setMockupType('texture')}
-                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                      mockupType === 'texture'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Texture Mockup
-                  </button>
-                </div>
-
-                {/* Render appropriate component */}
-                {mockupType === 'texture' ? (
-                  <TextureUploadSelector
-                    productId={product.id}
-                    onTexturesSelected={(front, back) => {
-                      // Convert texture to file for cart
-                      if (front) setUploadedFile(front)
-                    }}
-                    onMockupGenerated={(url) => {
-                      // Handle mockup generation
-                    }}
-                  />
-                ) : (
-                  <DesignOptionSelector
-                    selectedOption={designOption}
-                    onSelectOption={setDesignOption}
-                    uploadedFile={uploadedFile}
-                    onFileUpload={setUploadedFile}
-                    designBrief={designBrief}
-                    onDesignBriefChange={setDesignBrief}
-                    productId={product.id}
-                  />
-                )}
+                <DesignOptionSelector
+                  selectedOption={designOption}
+                  onSelectOption={setDesignOption}
+                  uploadedFile={uploadedFile}
+                  onFileUpload={setUploadedFile}
+                  designBrief={designBrief}
+                  onDesignBriefChange={setDesignBrief}
+                  productId={product.id}
+                />
                 <div className="flex gap-3">
                   <Button variant="outline" className="flex-1 rounded-full" onClick={() => setStep(1)}>
                     {t.customizer.backToMaterial}
