@@ -71,3 +71,61 @@ model QuoteRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String   // slug: business-cards, flyers, banners, ...
+  image       String
+  client      String
+  date        String   // YYYY-MM format
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  provider      String?
+  image         String?
+  role          UserRole  @default(USER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  cart          Cart?
+}
+
+model Cart {
+  id        String      @id @default(cuid())
+  userId    String      @unique
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model CartItem {
+  id              String   @id @default(cuid())
+  cartId          String
+  cart            Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId       String
+  productName     String
+  materialId      String?
+  materialName    String?
+  designOption    String?   // upload | hire
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  isCustomQuantity Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([cartId])
+}

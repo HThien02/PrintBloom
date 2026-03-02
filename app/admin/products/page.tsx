@@ -1,16 +1,43 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { useState } from "react"
-import { Plus, Pencil, Trash2, Search, X, Package } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Card, CardContent } from "@/components/ui/card"
-import { AdminLayout } from "@/components/admin-layout"
-import { adminProducts, type AdminProduct, type QuantityTier } from "@/lib/admin-data"
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import { Plus, Pencil, Trash2, Search, X, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { AdminLayout } from "@/components/admin-layout";
+
+interface QuantityTier {
+  quantity: number;
+  price: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  image: string;
+  price: number;
+  stock: number;
+  status: "active" | "draft" | "archived";
+  popular: boolean;
+  quantityTiers: QuantityTier[];
+}
 
 const categoryOptions = [
   { value: "business-cards", label: "Business Cards" },
@@ -19,99 +46,157 @@ const categoryOptions = [
   { value: "stickers", label: "Stickers & Labels" },
   { value: "invitations", label: "Invitations" },
   { value: "packaging", label: "Custom Packaging" },
-]
+];
 
-const emptyProduct: AdminProduct = {
-  id: "",
+const defaultProduct: Omit<Product, "id"> = {
   name: "",
   category: "business-cards",
+  image: "/images/business-cards.jpg",
   price: 0,
   stock: 0,
-  image: "/images/business-cards.jpg",
   status: "active",
+  popular: false,
   quantityTiers: [
-    { quantity: 100, price: 0 },
-    { quantity: 250, price: 0 },
-    { quantity: 500, price: 0 },
-    { quantity: 1000, price: 0 },
+    { quantity: 100, price: 24.99 },
+    { quantity: 250, price: 49.99 },
+    { quantity: 500, price: 89.99 },
+    { quantity: 1000, price: 149.99 },
   ],
-}
+};
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<AdminProduct[]>(adminProducts)
-  const [search, setSearch] = useState("")
-  const [filterCategory, setFilterCategory] = useState("all")
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editProduct, setEditProduct] = useState<AdminProduct | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  async function fetchProducts() {
+    try {
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase())
-    const matchCategory = filterCategory === "all" || p.category === filterCategory
-    return matchSearch && matchCategory
-  })
+    const matchSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.id.toLowerCase().includes(search.toLowerCase());
+    const matchCategory =
+      filterCategory === "all" || p.category === filterCategory;
+    return matchSearch && matchCategory;
+  });
 
   function openAdd() {
-    setEditProduct({ ...emptyProduct, id: `P${String(products.length + 1).padStart(3, "0")}`, quantityTiers: emptyProduct.quantityTiers.map(t => ({ ...t })) })
-    setDialogOpen(true)
+    setEditProduct({
+      id: "",
+      ...defaultProduct,
+      quantityTiers: defaultProduct.quantityTiers.map((t) => ({ ...t })),
+    });
+    setDialogOpen(true);
   }
 
-  function openEdit(product: AdminProduct) {
-    setEditProduct({ ...product, quantityTiers: product.quantityTiers.map(t => ({ ...t })) })
-    setDialogOpen(true)
+  function openEdit(product: Product) {
+    setEditProduct({
+      ...product,
+      quantityTiers: product.quantityTiers.map((t) => ({ ...t })),
+    });
+    setDialogOpen(true);
   }
 
-  function handleSave() {
-    if (!editProduct) return
-    // Set base price from first tier if available
-    const updatedProduct = {
-      ...editProduct,
-      price: editProduct.quantityTiers.length > 0 ? editProduct.quantityTiers[0].price : editProduct.price,
-    }
-    setProducts((prev) => {
-      const exists = prev.find((p) => p.id === updatedProduct.id)
-      if (exists) {
-        return prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+  async function handleSave() {
+    if (!editProduct) return;
+
+    const productData = {
+      name: editProduct.name,
+      category: editProduct.category,
+      image: editProduct.image,
+      price: editProduct.quantityTiers[0]?.price || editProduct.price,
+      stock: editProduct.stock,
+      status: editProduct.status,
+      popular: editProduct.popular,
+      quantityTiers: editProduct.quantityTiers,
+    };
+
+    try {
+      if (editProduct.id) {
+        // Update existing product
+        await fetch(`/api/products/${editProduct.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
+      } else {
+        // Create new product
+        await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
       }
-      return [...prev, updatedProduct]
-    })
-    setDialogOpen(false)
-    setEditProduct(null)
+      await fetchProducts();
+      setDialogOpen(false);
+      setEditProduct(null);
+    } catch (error) {
+      console.error("Error saving product:", error);
+    }
   }
 
-  function handleDelete(id: string) {
-    setProducts((prev) => prev.filter((p) => p.id !== id))
-    setDeleteConfirm(null)
+  async function handleDelete(id: string) {
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+      });
+      await fetchProducts();
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
   }
 
   function updateTier(index: number, field: keyof QuantityTier, value: number) {
-    if (!editProduct) return
-    const newTiers = [...editProduct.quantityTiers]
-    newTiers[index] = { ...newTiers[index], [field]: value }
-    setEditProduct({ ...editProduct, quantityTiers: newTiers })
+    if (!editProduct) return;
+    const newTiers = [...editProduct.quantityTiers];
+    newTiers[index] = { ...newTiers[index], [field]: value };
+    setEditProduct({ ...editProduct, quantityTiers: newTiers });
   }
 
   function addTier() {
-    if (!editProduct) return
-    const lastTier = editProduct.quantityTiers[editProduct.quantityTiers.length - 1]
-    const newQty = lastTier ? lastTier.quantity * 2 : 100
+    if (!editProduct) return;
+    const lastTier =
+      editProduct.quantityTiers[editProduct.quantityTiers.length - 1];
+    const newQty = lastTier ? lastTier.quantity * 2 : 100;
     setEditProduct({
       ...editProduct,
-      quantityTiers: [...editProduct.quantityTiers, { quantity: newQty, price: 0 }],
-    })
+      quantityTiers: [
+        ...editProduct.quantityTiers,
+        { quantity: newQty, price: 0 },
+      ],
+    });
   }
 
   function removeTier(index: number) {
-    if (!editProduct || editProduct.quantityTiers.length <= 1) return
-    const newTiers = editProduct.quantityTiers.filter((_, i) => i !== index)
-    setEditProduct({ ...editProduct, quantityTiers: newTiers })
+    if (!editProduct || editProduct.quantityTiers.length <= 1) return;
+    const newTiers = editProduct.quantityTiers.filter((_, i) => i !== index);
+    setEditProduct({ ...editProduct, quantityTiers: newTiers });
   }
 
   const statusStyles: Record<string, string> = {
     active: "bg-emerald-100 text-emerald-800",
     draft: "bg-amber-100 text-amber-800",
     archived: "bg-muted text-muted-foreground",
-  }
+  };
 
   return (
     <AdminLayout>
@@ -143,7 +228,9 @@ export default function AdminProductsPage() {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categoryOptions.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -153,83 +240,133 @@ export default function AdminProductsPage() {
         <Card className="border-border">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="p-4 font-medium text-muted-foreground">Product</th>
-                    <th className="p-4 font-medium text-muted-foreground">Category</th>
-                    <th className="p-4 font-medium text-muted-foreground">Quantity Tiers</th>
-                    <th className="p-4 font-medium text-muted-foreground">Stock</th>
-                    <th className="p-4 font-medium text-muted-foreground">Status</th>
-                    <th className="p-4 font-medium text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((product) => {
-                    const catLabel = categoryOptions.find((c) => c.value === product.category)?.label ?? product.category
-                    return (
-                      <tr key={product.id} className="border-b border-border/50">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
-                              <Image src={product.image} alt={product.name} fill className="object-cover" sizes="40px" />
+              {loading ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Loading products...
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Product
+                      </th>
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Category
+                      </th>
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Quantity Tiers
+                      </th>
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Stock
+                      </th>
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Status
+                      </th>
+                      <th className="p-4 font-medium text-muted-foreground">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((product) => {
+                      const catLabel =
+                        categoryOptions.find(
+                          (c) => c.value === product.category,
+                        )?.label ?? product.category;
+                      return (
+                        <tr
+                          key={product.id}
+                          className="border-b border-border/50"
+                        >
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                <Image
+                                  src={product.image}
+                                  alt={product.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="40px"
+                                />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {product.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {product.id}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-foreground">{product.name}</p>
-                              <p className="text-xs text-muted-foreground">{product.id}</p>
+                          </td>
+                          <td className="p-4 text-muted-foreground">
+                            {catLabel}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-wrap gap-1.5">
+                              {product.quantityTiers.map((tier, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                                >
+                                  <span className="font-medium text-foreground">
+                                    {tier.quantity}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    /
+                                  </span>
+                                  <span className="text-primary">
+                                    ${tier.price.toFixed(2)}
+                                  </span>
+                                </span>
+                              ))}
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-muted-foreground">{catLabel}</td>
-                        <td className="p-4">
-                          <div className="flex flex-wrap gap-1.5">
-                            {product.quantityTiers.map((tier, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={
+                                product.stock === 0
+                                  ? "text-red-500 font-medium"
+                                  : "text-foreground"
+                              }
+                            >
+                              {product.stock}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${statusStyles[product.status]}`}
+                            >
+                              {product.status}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openEdit(product)}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                                aria-label={`Edit ${product.name}`}
                               >
-                                <span className="font-medium text-foreground">{tier.quantity}</span>
-                                <span className="text-muted-foreground">/</span>
-                                <span className="text-primary">${tier.price.toFixed(2)}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={product.stock === 0 ? "text-red-500 font-medium" : "text-foreground"}>
-                            {product.stock}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${statusStyles[product.status]}`}>
-                            {product.status}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => openEdit(product)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                              aria-label={`Edit ${product.name}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(product.id)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-red-600"
-                              aria-label={`Delete ${product.name}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(product.id)}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-red-600"
+                                aria-label={`Delete ${product.name}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
 
-              {filtered.length === 0 && (
+              {!loading && filtered.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-muted-foreground">No products found.</p>
                 </div>
@@ -244,15 +381,15 @@ export default function AdminProductsPage() {
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif">
-              {editProduct && adminProducts.find((p) => p.id === editProduct.id) ? "Edit Product" : "Add Product"}
+              {editProduct?.id ? "Edit Product" : "Add Product"}
             </DialogTitle>
           </DialogHeader>
 
           {editProduct && (
             <form
               onSubmit={(e) => {
-                e.preventDefault()
-                handleSave()
+                e.preventDefault();
+                handleSave();
               }}
               className="flex flex-col gap-5"
             >
@@ -261,7 +398,9 @@ export default function AdminProductsPage() {
                 <Input
                   id="prod-name"
                   value={editProduct.name}
-                  onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditProduct({ ...editProduct, name: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -270,14 +409,18 @@ export default function AdminProductsPage() {
                 <Label htmlFor="prod-category">Category</Label>
                 <Select
                   value={editProduct.category}
-                  onValueChange={(v) => setEditProduct({ ...editProduct, category: v })}
+                  onValueChange={(v) =>
+                    setEditProduct({ ...editProduct, category: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -290,7 +433,12 @@ export default function AdminProductsPage() {
                   type="number"
                   min="0"
                   value={editProduct.stock}
-                  onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setEditProduct({
+                      ...editProduct,
+                      stock: parseInt(e.target.value) || 0,
+                    })
+                  }
                   required
                 />
               </div>
@@ -299,7 +447,12 @@ export default function AdminProductsPage() {
                 <Label htmlFor="prod-status">Status</Label>
                 <Select
                   value={editProduct.status}
-                  onValueChange={(v) => setEditProduct({ ...editProduct, status: v as AdminProduct["status"] })}
+                  onValueChange={(v) =>
+                    setEditProduct({
+                      ...editProduct,
+                      status: v as Product["status"],
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -317,7 +470,9 @@ export default function AdminProductsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-primary" />
-                    <Label className="text-base font-semibold">Quantity & Pricing Tiers</Label>
+                    <Label className="text-base font-semibold">
+                      Quantity & Pricing Tiers
+                    </Label>
                   </div>
                   <Button
                     type="button"
@@ -332,25 +487,40 @@ export default function AdminProductsPage() {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Define fixed quantity options with their prices. Customers can also enter a custom quantity (they will be contacted for a quote).
+                  Define fixed quantity options with their prices. Customers can
+                  also enter a custom quantity (they will be contacted for a
+                  quote).
                 </p>
 
                 <div className="flex flex-col gap-2">
                   {/* Header row */}
                   <div className="grid grid-cols-[1fr_1fr_32px] gap-2 px-1">
-                    <span className="text-xs font-medium text-muted-foreground">Quantity</span>
-                    <span className="text-xs font-medium text-muted-foreground">Price ($)</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Quantity
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Price ($)
+                    </span>
                     <span className="sr-only">Remove</span>
                   </div>
 
                   {editProduct.quantityTiers.map((tier, index) => (
-                    <div key={index} className="grid grid-cols-[1fr_1fr_32px] items-center gap-2">
+                    <div
+                      key={index}
+                      className="grid grid-cols-[1fr_1fr_32px] items-center gap-2"
+                    >
                       <Input
                         type="number"
                         min="1"
                         placeholder="Qty"
                         value={tier.quantity || ""}
-                        onChange={(e) => updateTier(index, "quantity", parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateTier(
+                            index,
+                            "quantity",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
                         className="h-9"
                       />
                       <Input
@@ -359,7 +529,13 @@ export default function AdminProductsPage() {
                         step="0.01"
                         placeholder="Price"
                         value={tier.price || ""}
-                        onChange={(e) => updateTier(index, "price", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateTier(
+                            index,
+                            "price",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
                         className="h-9"
                       />
                       <button
@@ -377,13 +553,19 @@ export default function AdminProductsPage() {
 
                 <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30">
                   <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
-                    Customers will also see a &ldquo;Custom Quantity&rdquo; option where they can enter any amount. Your team will be notified to provide a personalized quote.
+                    Customers will also see a &ldquo;Custom Quantity&rdquo;
+                    option where they can enter any amount. Your team will be
+                    notified to provide a personalized quote.
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit">Save Product</Button>
@@ -394,13 +576,17 @@ export default function AdminProductsPage() {
       </Dialog>
 
       {/* Delete confirmation */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+      <Dialog
+        open={!!deleteConfirm}
+        onOpenChange={() => setDeleteConfirm(null)}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-serif">Delete Product</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete this product? This action cannot be undone.
+            Are you sure you want to delete this product? This action cannot be
+            undone.
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
@@ -416,5 +602,5 @@ export default function AdminProductsPage() {
         </DialogContent>
       </Dialog>
     </AdminLayout>
-  )
+  );
 }

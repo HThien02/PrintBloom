@@ -85,12 +85,12 @@ function CheckoutContent() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to place order")
+        throw new Error(data.error || t.validation.somethingWentWrong)
       }
       setShowSuccess(true)
       clearCart()
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to place order")
+      setSubmitError(err instanceof Error ? err.message : t.validation.somethingWentWrong)
     } finally {
       setIsSubmitting(false)
     }

@@ -55,12 +55,12 @@ function QuoteContent() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to submit quote request")
+        throw new Error(data.error || t.validation.somethingWentWrong)
       }
       setSubmitted(true)
       customItems.forEach((item) => removeFromCart(item.id))
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit quote request")
+      setSubmitError(err instanceof Error ? err.message : t.validation.somethingWentWrong)
     } finally {
       setIsSubmitting(false)
     }

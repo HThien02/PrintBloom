@@ -1,29 +1,40 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Image from "next/image"
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, MessageCircle, LogIn } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { LanguageProvider, useLanguage } from "@/lib/language-context"
-import { CartProvider, useCart } from "@/lib/cart-context"
-import { LanguageSwitcher } from "@/components/language-switcher"
+import Link from "next/link";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowLeft,
+  MessageCircle,
+  LogIn,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { LanguageProvider, useLanguage } from "@/lib/language-context";
+import { CartProvider, useCart } from "@/lib/cart-context";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 function CartContent() {
-  const { t } = useLanguage()
-  const { items, removeFromCart, updateQuantity, getCartTotal } = useCart()
+  const { t } = useLanguage();
+  const { items, removeFromCart, updateQuantity, getCartTotal } = useCart();
+  const { data: session } = useSession();
+  const isLoggedIn = !!session;
 
-  // Mock: in production this would come from an auth context
-  const isLoggedIn = false
+  const customItems = items.filter((item) => item.isCustomQuantity);
+  const buyableItems = items.filter((item) => !item.isCustomQuantity);
+  const hasCustomItems = customItems.length > 0;
+  const hasBuyableItems = buyableItems.length > 0;
 
-  const customItems = items.filter((item) => item.isCustomQuantity)
-  const buyableItems = items.filter((item) => !item.isCustomQuantity)
-  const hasCustomItems = customItems.length > 0
-  const hasBuyableItems = buyableItems.length > 0
-
-  const subtotal = buyableItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-  const taxRate = 0.08
-  const tax = subtotal * taxRate
+  const subtotal = buyableItems.reduce(
+    (sum, item) => sum + item.unitPrice * item.quantity,
+    0,
+  );
+  const taxRate = 0.08;
+  const tax = subtotal * taxRate;
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,7 +45,9 @@ function CartContent() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               P
             </div>
-            <span className="font-serif text-xl text-foreground">PrintBloom</span>
+            <span className="font-serif text-xl text-foreground">
+              PrintBloom
+            </span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -42,7 +55,10 @@ function CartContent() {
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
             {t.cart.continueShopping}
           </Link>
@@ -62,7 +78,9 @@ function CartContent() {
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
               <ShoppingBag className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h2 className="font-serif text-2xl text-foreground">{t.cart.empty}</h2>
+            <h2 className="font-serif text-2xl text-foreground">
+              {t.cart.empty}
+            </h2>
             <p className="mt-2 text-muted-foreground">{t.cart.emptySubtitle}</p>
             <Button asChild className="mt-6 rounded-full px-8">
               <Link href="/">{t.cart.continueShopping}</Link>
@@ -125,23 +143,37 @@ function CartContent() {
 
                     <div className="flex flex-col gap-3 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t.cart.subtotal}</span>
-                        <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
+                        <span className="text-muted-foreground">
+                          {t.cart.subtotal}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          ${subtotal.toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t.cart.shipping}</span>
-                        <span className="text-muted-foreground">{t.cart.shippingCalc}</span>
+                        <span className="text-muted-foreground">
+                          {t.cart.shipping}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {t.cart.shippingCalc}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t.cart.tax}</span>
-                        <span className="font-medium text-foreground">${tax.toFixed(2)}</span>
+                        <span className="text-muted-foreground">
+                          {t.cart.tax}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          ${tax.toFixed(2)}
+                        </span>
                       </div>
                     </div>
 
                     <Separator className="my-4" />
 
                     <div className="mb-6 flex justify-between">
-                      <span className="font-semibold text-foreground">{t.cart.total}</span>
+                      <span className="font-semibold text-foreground">
+                        {t.cart.total}
+                      </span>
                       <span className="font-serif text-xl text-foreground">
                         ${(subtotal + tax).toFixed(2)}
                       </span>
@@ -159,7 +191,11 @@ function CartContent() {
                             {t.cart.loginRequiredNote}
                           </p>
                         </div>
-                        <Button asChild size="lg" className="w-full rounded-full">
+                        <Button
+                          asChild
+                          size="lg"
+                          className="w-full rounded-full"
+                        >
                           <Link href="/login">
                             <LogIn className="mr-2 h-4 w-4" />
                             {t.cart.loginToCheckout}
@@ -168,7 +204,12 @@ function CartContent() {
                       </div>
                     )}
 
-                    <Button asChild variant="ghost" size="sm" className="mt-3 w-full text-muted-foreground">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="mt-3 w-full text-muted-foreground"
+                    >
                       <Link href="/">{t.cart.continueShopping}</Link>
                     </Button>
                   </div>
@@ -188,17 +229,27 @@ function CartContent() {
 
                     <div className="mb-4 flex flex-col gap-2">
                       {customItems.map((item) => (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-foreground">{item.productName}</span>
+                        <div
+                          key={item.id}
+                          className="flex justify-between text-sm"
+                        >
+                          <span className="text-foreground">
+                            {item.productName}
+                          </span>
                           <span className="font-medium text-amber-600 dark:text-amber-400">
-                            {item.quantity.toLocaleString()} {t.quantitySelector?.pieces}
+                            {item.quantity.toLocaleString()}{" "}
+                            {t.quantitySelector?.pieces}
                           </span>
                         </div>
                       ))}
                     </div>
 
                     {isLoggedIn ? (
-                      <Button asChild size="lg" className="w-full rounded-full bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500">
+                      <Button
+                        asChild
+                        size="lg"
+                        className="w-full rounded-full bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500"
+                      >
                         <Link href="/quote">
                           <MessageCircle className="mr-2 h-4 w-4" />
                           {t.cart.getQuote}
@@ -212,7 +263,11 @@ function CartContent() {
                             {t.cart.loginRequiredNote}
                           </p>
                         </div>
-                        <Button asChild size="lg" className="w-full rounded-full bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500">
+                        <Button
+                          asChild
+                          size="lg"
+                          className="w-full rounded-full bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500"
+                        >
                           <Link href="/login">
                             <LogIn className="mr-2 h-4 w-4" />
                             {t.cart.loginToQuote}
@@ -228,27 +283,33 @@ function CartContent() {
         )}
       </main>
     </div>
-  )
+  );
 }
 
 interface CartItemCardProps {
   item: {
-    id: string
-    product: { image: string }
-    productName: string
-    material: { name: string } | null
-    designOption: "upload" | "hire" | null
-    quantity: number
-    unitPrice: number
-    isCustomQuantity?: boolean
-  }
-  t: ReturnType<typeof useLanguage>["t"]
-  onUpdateQuantity: (id: string, quantity: number) => void
-  onRemove: (id: string) => void
-  isQuoteItem?: boolean
+    id: string;
+    product: { image: string };
+    productName: string;
+    material: { name: string } | null;
+    designOption: "upload" | "hire" | null;
+    quantity: number;
+    unitPrice: number;
+    isCustomQuantity?: boolean;
+  };
+  t: ReturnType<typeof useLanguage>["t"];
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  onRemove: (id: string) => void;
+  isQuoteItem?: boolean;
 }
 
-function CartItemCard({ item, t, onUpdateQuantity, onRemove, isQuoteItem }: CartItemCardProps) {
+function CartItemCard({
+  item,
+  t,
+  onUpdateQuantity,
+  onRemove,
+  isQuoteItem,
+}: CartItemCardProps) {
   return (
     <div
       className={`flex gap-4 rounded-xl border p-4 ${
@@ -337,7 +398,7 @@ function CartItemCard({ item, t, onUpdateQuantity, onRemove, isQuoteItem }: Cart
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function CartPage() {
@@ -347,5 +408,5 @@ export default function CartPage() {
         <CartContent />
       </CartProvider>
     </LanguageProvider>
-  )
+  );
 }

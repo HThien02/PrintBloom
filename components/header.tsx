@@ -1,18 +1,20 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useState } from "react"
-import { Menu, X, ShoppingBag, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { LanguageSwitcher } from "@/components/language-switcher"
-import { useLanguage } from "@/lib/language-context"
-import { useCart } from "@/lib/cart-context"
+import Link from "next/link";
+import { useState } from "react";
+import { Menu, X, ShoppingBag, User, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useLanguage } from "@/lib/language-context";
+import { useCart } from "@/lib/cart-context";
+import { useSession, signOut } from "next-auth/react";
 
 export function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const { t } = useLanguage()
-  const { getCartCount } = useCart()
-  const cartCount = getCartCount()
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
+  const { getCartCount } = useCart();
+  const { data: session } = useSession();
+  const cartCount = getCartCount();
 
   const navLinks = [
     { label: t.nav.products, href: "#products" },
@@ -20,7 +22,11 @@ export function Header() {
     { label: t.nav.about, href: "/about" },
     { label: "Portfolio", href: "/portfolio" },
     { label: "Feedback", href: "/feedback" },
-  ]
+  ];
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" });
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -35,40 +41,76 @@ export function Header() {
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) =>
             link.href.startsWith("/") ? (
-              <Link key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
                 {link.label}
               </Link>
             ) : (
-              <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
                 {link.label}
               </a>
-            )
+            ),
           )}
         </nav>
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
 
-          <Link
-            href="/login"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.login}
-          >
-            <User className="h-4.5 w-4.5" />
-          </Link>
-
-          <Link
-            href="/cart"
-            className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.cartLabel}
-          >
-            <ShoppingBag className="h-4.5 w-4.5" />
-            {cartCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {session ? (
+            // Show user avatar, logout, and cart when logged in
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                aria-label={session.user?.name || "User"}
+              >
+                {session.user?.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-4.5 w-4.5" />
+                )}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Logout"
+              >
+                <LogOut className="h-4.5 w-4.5" />
+              </button>
+              <Link
+                href="/cart"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={t.nav.cartLabel}
+              >
+                <ShoppingBag className="h-4.5 w-4.5" />
+                {cartCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            </div>
+          ) : (
+            // Show login button when not logged in - no cart
+            <Link
+              href="/login"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={t.nav.login}
+            >
+              <User className="h-4.5 w-4.5" />
+            </Link>
+          )}
 
           <Button asChild size="sm" className="hidden rounded-full md:flex">
             <a href="#products">{t.nav.getStarted}</a>
@@ -79,7 +121,11 @@ export function Header() {
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={t.nav.toggleMenu}
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
@@ -106,14 +152,43 @@ export function Header() {
                 >
                   {link.label}
                 </a>
-              )
+              ),
             )}
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
-              {t.nav.login}
-            </Link>
-            <Link href="/cart" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
-              {t.nav.cart} {cartCount > 0 && `(${cartCount})`}
-            </Link>
+            {session ? (
+              <>
+                <Link
+                  href="/admin"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {session.user?.name || "Admin"}
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileOpen(false);
+                  }}
+                  className="text-sm text-left text-muted-foreground hover:text-foreground"
+                >
+                  Logout
+                </button>
+                <Link
+                  href="/cart"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {t.nav.cart} {cartCount > 0 && `(${cartCount})`}
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+              >
+                {t.nav.login}
+              </Link>
+            )}
             <Button asChild size="sm" className="mt-2 rounded-full">
               <a href="#products">{t.nav.getStarted}</a>
             </Button>
@@ -121,5 +196,5 @@ export function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }
