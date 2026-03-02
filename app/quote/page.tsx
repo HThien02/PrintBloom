@@ -12,25 +12,47 @@ import { Separator } from "@/components/ui/separator"
 import { LanguageProvider, useLanguage } from "@/lib/language-context"
 import { CartProvider, useCart } from "@/lib/cart-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { getApiHeaders } from "@/lib/api"
 
 function QuoteContent() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { items, removeFromCart } = useCart()
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const customItems = items.filter((item) => item.isCustomQuantity)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSubmitError(null)
+    setFieldErrors({})
+    
     const form = e.currentTarget
     const formData = new FormData(form)
     const name = formData.get("quote-name") as string
     const email = formData.get("quote-email") as string
     const phone = formData.get("quote-phone") as string
     const notes = formData.get("quote-notes") as string
+
+    // Custom validation
+    const errors: Record<string, string> = {}
+    
+    if (!name || !name.trim()) {
+      errors.name = t.validation.quoteNameRequired
+    }
+    
+    if (!email || !email.trim()) {
+      errors.email = t.validation.quoteEmailRequired
+    } else if (!email.includes("@") || !email.includes(".")) {
+      errors.email = t.validation.quoteEmailInvalid
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
 
     const payload = {
       name,
@@ -50,11 +72,18 @@ function QuoteContent() {
     try {
       const res = await fetch("/api/quotes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getApiHeaders(locale),
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        
+        // Handle field-specific errors
+        if (data.errors && typeof data.errors === 'object') {
+          setFieldErrors(data.errors)
+          return
+        }
+        
         throw new Error(data.error || t.validation.somethingWentWrong)
       }
       setSubmitted(true)
@@ -172,11 +201,28 @@ function QuoteContent() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="quote-name">{t.quote.fullName}</Label>
-                <Input id="quote-name" name="quote-name" placeholder={t.quote.fullNamePlaceholder} required className="h-10" />
+                <Input 
+                  id="quote-name" 
+                  name="quote-name" 
+                  placeholder={t.quote.fullNamePlaceholder} 
+                  className={`h-10 ${fieldErrors.name ? 'border-red-500' : ''}`}
+                />
+                {fieldErrors.name && (
+                  <p className="text-sm text-red-500">{fieldErrors.name}</p>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="quote-email">{t.checkout.email}</Label>
-                <Input id="quote-email" name="quote-email" type="email" placeholder={t.checkout.emailPlaceholder} required className="h-10" />
+                <Input 
+                  id="quote-email" 
+                  name="quote-email" 
+                  type="email" 
+                  placeholder={t.checkout.emailPlaceholder} 
+                  className={`h-10 ${fieldErrors.email ? 'border-red-500' : ''}`}
+                />
+                {fieldErrors.email && (
+                  <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="quote-phone">{t.checkout.phone}</Label>
@@ -196,6 +242,9 @@ function QuoteContent() {
                 />
               </div>
 
+              {fieldErrors.items && (
+                <p className="text-sm text-red-500">{fieldErrors.items}</p>
+              )}
               {submitError && (
                 <p className="text-sm text-destructive">{submitError}</p>
               )}
@@ -222,7 +271,7 @@ export default function QuotePage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
                   P
                 </div>
-                <span className="font-serif text-xl text-foreground">PrintBloom</span>
+                <span className="font-serif text-xl text-foreground">TPrint</span>
               </Link>
               <LanguageSwitcher />
             </div>

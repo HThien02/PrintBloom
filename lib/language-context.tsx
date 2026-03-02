@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { useSession } from "next-auth/react";
 import {
   translations,
   type Locale,
@@ -21,23 +22,46 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
-const STORAGE_KEY = "printbloom-locale";
+const STORAGE_KEY = "tprint-locale";
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { data: session } = useSession();
   const [locale, setLocaleState] = useState<Locale>("en");
 
   // Load locale from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "vi" || stored === "zh") {
-      setLocaleState(stored);
+    // Check if user is admin
+    const isAdmin = session?.user?.role === "ADMIN";
+    
+    if (isAdmin) {
+      // Admin defaults to Vietnamese
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "vi") {
+        setLocaleState(stored);
+      } else {
+        // Force Vietnamese for admin if not already set
+        setLocaleState("vi");
+        localStorage.setItem(STORAGE_KEY, "vi");
+      }
+    } else {
+      // Regular user uses stored preference or defaults to English
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "en" || stored === "vi" || stored === "zh") {
+        setLocaleState(stored);
+      }
     }
-  }, []);
+  }, [session]);
 
   // Save locale to localStorage when it changes
   const setLocale = (newLocale: Locale) => {
+    const isAdmin = session?.user?.role === "ADMIN";
+    
+    // Allow language switch for all users
     setLocaleState(newLocale);
     localStorage.setItem(STORAGE_KEY, newLocale);
+    
+    // Dispatch custom event for currency context to listen
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: newLocale }));
   };
 
   const t = translations[locale] as Translations;

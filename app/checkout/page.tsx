@@ -19,14 +19,20 @@ import {
 import { LanguageProvider, useLanguage } from "@/lib/language-context"
 import { CartProvider, useCart } from "@/lib/cart-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { getApiHeaders } from "@/lib/api"
+import { VietnamAddressSelector } from "@/components/vietnam-address-selector"
 
 function CheckoutContent() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { items, getCartTotal, clearCart } = useCart()
   const [shippingMethod, setShippingMethod] = useState("standard")
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [selectedProvince, setSelectedProvince] = useState("")
+  const [selectedWard, setSelectedWard] = useState("")
+  const [selectedProvinceName, setSelectedProvinceName] = useState("")
 
   const subtotal = getCartTotal()
   const shippingCost =
@@ -38,6 +44,7 @@ function CheckoutContent() {
   async function handlePlaceOrder(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSubmitError(null)
+    setFieldErrors({})
     const form = e.currentTarget
     const formData = new FormData(form)
     const email = formData.get("email") as string
@@ -80,11 +87,18 @@ function CheckoutContent() {
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getApiHeaders(locale),
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        
+        // Handle field-specific errors
+        if (data.errors && typeof data.errors === 'object') {
+          setFieldErrors(data.errors)
+          return
+        }
+        
         throw new Error(data.error || t.validation.somethingWentWrong)
       }
       setShowSuccess(true)
@@ -105,7 +119,7 @@ function CheckoutContent() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               P
             </div>
-            <span className="font-serif text-xl text-foreground">PrintBloom</span>
+            <span className="font-serif text-xl text-foreground">TPrint</span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -133,7 +147,16 @@ function CheckoutContent() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="email">{t.checkout.email}</Label>
-                    <Input id="email" name="email" type="email" placeholder={t.checkout.emailPlaceholder} required className="h-11" />
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      placeholder={t.checkout.emailPlaceholder} 
+                      className={`h-11 ${fieldErrors.email ? 'border-red-500' : ''}`}
+                    />
+                    {fieldErrors.email && (
+                      <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="phone">{t.checkout.phone}</Label>
@@ -152,41 +175,124 @@ function CheckoutContent() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="firstName">{t.checkout.firstName}</Label>
-                      <Input id="firstName" name="firstName" placeholder={t.checkout.firstName} required className="h-11" />
+                      <Input 
+                        id="firstName" 
+                        name="firstName" 
+                        placeholder={t.checkout.firstName} 
+                        className={`h-11 ${fieldErrors.firstName ? 'border-red-500' : ''}`}
+                      />
+                      {fieldErrors.firstName && (
+                        <p className="text-sm text-red-500">{fieldErrors.firstName}</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="lastName">{t.checkout.lastName}</Label>
-                      <Input id="lastName" name="lastName" placeholder={t.checkout.lastName} required className="h-11" />
+                      <Input 
+                        id="lastName" 
+                        name="lastName" 
+                        placeholder={t.checkout.lastName} 
+                        className={`h-11 ${fieldErrors.lastName ? 'border-red-500' : ''}`}
+                      />
+                      {fieldErrors.lastName && (
+                        <p className="text-sm text-red-500">{fieldErrors.lastName}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="address">{t.checkout.address}</Label>
-                    <Input id="address" name="address" placeholder={t.checkout.addressPlaceholder} required className="h-11" />
+                    <Input 
+                      id="address" 
+                      name="address" 
+                      placeholder={t.checkout.addressPlaceholder} 
+                      className={`h-11 ${fieldErrors.address ? 'border-red-500' : ''}`}
+                    />
+                    {fieldErrors.address && (
+                      <p className="text-sm text-red-500">{fieldErrors.address}</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="apartment">{t.checkout.apartment}</Label>
                     <Input id="apartment" name="apartment" placeholder={t.checkout.apartmentPlaceholder} className="h-11" />
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="city">{t.checkout.city}</Label>
-                      <Input id="city" name="city" placeholder={t.checkout.cityPlaceholder} required className="h-11" />
+                  
+                  {/* Vietnamese Address Selector for Vietnamese locale */}
+                  {locale === 'vi' ? (
+                    <div className="space-y-4">
+                      <VietnamAddressSelector
+                        onProvinceChange={(provinceCode: string, provinceName: string) => {
+                          setSelectedProvince(provinceCode)
+                          setSelectedProvinceName(provinceName)
+                          
+                          // Update hidden inputs for form submission
+                          const cityInput = document.getElementById('city') as HTMLInputElement
+                          const stateInput = document.getElementById('state') as HTMLInputElement
+                          if (cityInput) cityInput.value = provinceName
+                          if (stateInput) stateInput.value = provinceName
+                        }}
+                        onWardChange={(wardCode: string, wardName: string) => {
+                          setSelectedWard(wardCode)
+                          
+                          // Update hidden inputs with selected ward name
+                          const wardInput = document.getElementById('address_line1') as HTMLInputElement
+                          if (wardInput) {
+                            wardInput.value = wardName
+                          }
+                        }}
+                      />
+                      {/* Hidden inputs for form submission */}
+                      <input type="hidden" id="city" name="city" />
+                      <input type="hidden" id="state" name="state" />
+                      <input type="hidden" id="zip" name="zip" value="000000" />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="state">{t.checkout.state}</Label>
-                      <Input id="state" name="state" placeholder={t.checkout.statePlaceholder} required className="h-11" />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="city">{t.checkout.city}</Label>
+                        <Input 
+                          id="city" 
+                          name="city" 
+                          placeholder={t.checkout.cityPlaceholder} 
+                          className={`h-11 ${fieldErrors.city ? 'border-red-500' : ''}`}
+                        />
+                        {fieldErrors.city && (
+                          <p className="text-sm text-red-500">{fieldErrors.city}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="state">{t.checkout.state}</Label>
+                        <Input 
+                          id="state" 
+                          name="state" 
+                          placeholder={t.checkout.statePlaceholder} 
+                          className={`h-11 ${fieldErrors.state ? 'border-red-500' : ''}`}
+                        />
+                        {fieldErrors.state && (
+                          <p className="text-sm text-red-500">{fieldErrors.state}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="zip">{t.checkout.zip}</Label>
+                        <Input 
+                          id="zip" 
+                          name="zip" 
+                          placeholder={t.checkout.zipPlaceholder} 
+                          className={`h-11 ${fieldErrors.zip ? 'border-red-500' : ''}`}
+                        />
+                        {fieldErrors.zip && (
+                          <p className="text-sm text-red-500">{fieldErrors.zip}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="zip">{t.checkout.zip}</Label>
-                      <Input id="zip" name="zip" placeholder={t.checkout.zipPlaceholder} required className="h-11" />
-                    </div>
-                  </div>
+                  )}
                 </div>
               </section>
 
               {/* Shipping Method */}
               <section className="rounded-xl border border-border bg-card p-6">
                 <h2 className="mb-4 font-serif text-lg text-foreground">{t.checkout.shippingMethod}</h2>
+                {fieldErrors.shippingMethod && (
+                  <p className="mb-3 text-sm text-red-500">{fieldErrors.shippingMethod}</p>
+                )}
                 <RadioGroup value={shippingMethod} onValueChange={setShippingMethod} className="flex flex-col gap-3">
                   <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border p-4 transition-colors has-[button[data-state=checked]]:border-primary has-[button[data-state=checked]]:bg-primary/5">
                     <div className="flex items-center gap-3">
@@ -230,20 +336,20 @@ function CheckoutContent() {
                 <div className="grid gap-4">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="cardNumber">{t.checkout.cardNumber}</Label>
-                    <Input id="cardNumber" placeholder={t.checkout.cardPlaceholder} required className="h-11" />
+                    <Input id="cardNumber" placeholder={t.checkout.cardPlaceholder} className="h-11" />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="expiry">{t.checkout.expiry}</Label>
-                      <Input id="expiry" placeholder={t.checkout.expiryPlaceholder} required className="h-11" />
+                      <Input id="expiry" placeholder={t.checkout.expiryPlaceholder} className="h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="cvc">{t.checkout.cvc}</Label>
-                      <Input id="cvc" placeholder={t.checkout.cvcPlaceholder} required className="h-11" />
+                      <Input id="cvc" placeholder={t.checkout.cvcPlaceholder} className="h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="cardholderName">{t.checkout.cardholderName}</Label>
-                      <Input id="cardholderName" placeholder={t.checkout.cardholderPlaceholder} required className="h-11" />
+                      <Input id="cardholderName" placeholder={t.checkout.cardholderPlaceholder} className="h-11" />
                     </div>
                   </div>
                 </div>
@@ -315,6 +421,9 @@ function CheckoutContent() {
                   <span className="font-serif text-xl text-foreground">${total.toFixed(2)}</span>
                 </div>
 
+                {fieldErrors.items && (
+                  <p className="mb-3 text-sm text-red-500">{fieldErrors.items}</p>
+                )}
                 {submitError && (
                   <p className="mb-3 text-sm text-destructive">{submitError}</p>
                 )}

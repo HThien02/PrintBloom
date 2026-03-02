@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { useCurrency } from "@/lib/currency-context"
+import { useSession } from "next-auth/react"
 
 export interface Product {
   id: string
@@ -15,12 +17,12 @@ export interface Product {
 }
 
 const fallbackProducts: Product[] = [
-  { id: "business-cards", image: "/images/business-cards.jpg", startingPrice: "$24.99", popular: true },
-  { id: "flyers", image: "/images/flyers.jpg", startingPrice: "$19.99" },
-  { id: "banners", image: "/images/banners.jpg", startingPrice: "$39.99" },
-  { id: "stickers", image: "/images/stickers.jpg", startingPrice: "$14.99", popular: true },
-  { id: "invitations", image: "/images/invitations.jpg", startingPrice: "$29.99" },
-  { id: "packaging", image: "/images/packaging.jpg", startingPrice: "$49.99" },
+  { id: "business-cards", image: "/images/business-cards.jpg", startingPrice: "50000", popular: true }, // 50,000 VND
+  { id: "flyers", image: "/images/flyers.jpg", startingPrice: "40000" }, // 40,000 VND
+  { id: "banners", image: "/images/banners.jpg", startingPrice: "80000" }, // 80,000 VND
+  { id: "stickers", image: "/images/stickers.jpg", startingPrice: "30000", popular: true }, // 30,000 VND
+  { id: "invitations", image: "/images/invitations.jpg", startingPrice: "60000" }, // 60,000 VND
+  { id: "packaging", image: "/images/packaging.jpg", startingPrice: "100000" }, // 100,000 VND
 ]
 
 interface ProductCatalogProps {
@@ -29,8 +31,13 @@ interface ProductCatalogProps {
 
 export function ProductCatalog({ onSelectProduct }: ProductCatalogProps) {
   const { t } = useLanguage()
+  const { data: session } = useSession()
+  const { formatPrice } = useCurrency()
   const [products, setProducts] = useState<Product[]>(fallbackProducts)
   const [loading, setLoading] = useState(true)
+
+  // Check if user is admin
+  const isAdmin = session?.user?.role === "ADMIN"
 
   useEffect(() => {
     fetch("/api/products?catalog=true")
@@ -86,11 +93,13 @@ export function ProductCatalog({ onSelectProduct }: ProductCatalogProps) {
                     <p className="mt-1 text-sm text-muted-foreground">{productText.description}</p>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground">
-                        {t.catalog.from} {product.startingPrice}
+                        {t.catalog.from} {formatPrice(parseFloat(product.startingPrice) || 0)}
                       </span>
-                      <span className="flex items-center gap-1 text-sm font-medium text-primary transition-transform group-hover:translate-x-1">
-                        {t.catalog.customize} <ArrowRight className="h-3.5 w-3.5" />
-                      </span>
+                      {!isAdmin && (
+                        <span className="flex items-center gap-1 text-sm font-medium text-primary transition-transform group-hover:translate-x-1">
+                          {t.catalog.customize} <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { formatPrice } from "@/lib/utils"
 import {
   BarChart,
   Bar,
@@ -58,21 +59,21 @@ export default function AdminDashboard() {
   const summaryCards = [
     {
       label: "Total Income",
-      value: `$${totalIncome.toLocaleString()}`,
+      value: formatPrice(totalIncome),
       icon: DollarSign,
       trend: "+12.5%",
       up: true,
     },
     {
       label: "Total Expenses",
-      value: `$${totalExpense.toLocaleString()}`,
+      value: formatPrice(totalExpense),
       icon: TrendingDown,
       trend: "+3.2%",
       up: false,
     },
     {
       label: "Net Profit",
-      value: `$${totalProfit.toLocaleString()}`,
+      value: formatPrice(totalProfit),
       icon: TrendingUp,
       trend: "+18.7%",
       up: true,
@@ -178,7 +179,7 @@ export default function AdminDashboard() {
                         borderRadius: "8px",
                         fontSize: 13,
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, undefined]}
+                      formatter={(value: number) => [formatPrice(value), undefined]}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Bar dataKey="income" name="Income" fill="var(--primary)" radius={[4, 4, 0, 0]} />
@@ -216,7 +217,7 @@ export default function AdminDashboard() {
                         borderRadius: "8px",
                         fontSize: 13,
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, undefined]}
+                      formatter={(value: number) => [formatPrice(value), undefined]}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Line

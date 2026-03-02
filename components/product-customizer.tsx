@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { MaterialSelector, type Material, type QuantityOption, quantityOptionsByProduct } from "@/components/material-selector"
 import { DesignOptionSelector } from "@/components/design-option-selector"
+import { TextureUploadSelector } from "@/components/texture-upload-selector"
 import type { Product } from "@/components/product-catalog"
 import { useLanguage } from "@/lib/language-context"
+import { useCurrency } from "@/lib/currency-context"
 import { useCart } from "@/lib/cart-context"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 
 interface ProductCustomizerProps {
@@ -27,8 +30,14 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
   const [designBrief, setDesignBrief] = useState("")
   const [step, setStep] = useState<1 | 2>(1)
   const [submitted, setSubmitted] = useState(false)
+  const [mockupType, setMockupType] = useState<'upload' | 'texture'>('upload')
   const { t } = useLanguage()
+  const { formatPrice } = useCurrency()
   const { addToCart } = useCart()
+  const { data: session } = useSession()
+
+  // Check if user is admin
+  const isAdmin = session?.user?.role === "ADMIN"
 
   const productText = t.catalog.products[product.id as keyof typeof t.catalog.products]
 
@@ -118,13 +127,13 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
                 <p className="text-sm text-muted-foreground">{productText.description}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {currentPrice !== null && currentPrice > 0 ? (
-                    <span className="text-lg font-semibold text-foreground">${currentPrice.toFixed(2)}</span>
+                    <span className="text-lg font-semibold text-foreground">{formatPrice(currentPrice)}</span>
                   ) : isCustomQuantity && currentQuantity > 0 ? (
                     <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                       {t.quantitySelector?.quotePending || "Quote pending"}
                     </span>
                   ) : (
-                    <span className="text-lg font-semibold text-foreground">{t.catalog.from} {product.startingPrice}</span>
+                    <span className="text-lg font-semibold text-foreground">{t.catalog.from} {formatPrice(parseFloat(product.startingPrice))}</span>
                   )}
                   {selectedMaterial && (
                     <span className="text-sm text-primary">{selectedMaterial.priceModifier}</span>
@@ -164,7 +173,7 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
                   {!isCustomQuantity && currentPrice !== null && currentPrice > 0 && (
                     <div className="flex justify-between border-t border-border pt-2">
                       <span className="text-muted-foreground">{t.quantitySelector?.priceLabel || "Price"}</span>
-                      <span className="font-semibold text-foreground">${currentPrice.toFixed(2)}</span>
+                      <span className="font-semibold text-foreground">{formatPrice(currentPrice)}</span>
                     </div>
                   )}
                   {designOption && (
@@ -224,7 +233,7 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
                   isCustomQuantity={isCustomQuantity}
                   onToggleCustomQuantity={setIsCustomQuantity}
                 />
-                <Button className="w-full rounded-full" disabled={!canProceedToStep2} onClick={() => setStep(2)}>
+                <Button className="w-full rounded-full" disabled={!canProceedToStep2 || isAdmin} onClick={() => setStep(2)}>
                   {t.customizer.continueToDesign}
                 </Button>
               </div>
@@ -232,23 +241,63 @@ export function ProductCustomizer({ product, onBack }: ProductCustomizerProps) {
 
             {step === 2 && (
               <div className="space-y-6">
-                <DesignOptionSelector
-                  selectedOption={designOption}
-                  onSelectOption={setDesignOption}
-                  uploadedFile={uploadedFile}
-                  onFileUpload={setUploadedFile}
-                  designBrief={designBrief}
-                  onDesignBriefChange={setDesignBrief}
-                  productId={product.id}
-                />
+                {/* Mockup Type Selector */}
+                <div className="flex gap-2 p-1 bg-muted rounded-lg">
+                  <button
+                    onClick={() => setMockupType('upload')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      mockupType === 'upload'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Standard Upload
+                  </button>
+                  <button
+                    onClick={() => setMockupType('texture')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      mockupType === 'texture'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Texture Mockup
+                  </button>
+                </div>
+
+                {/* Render appropriate component */}
+                {mockupType === 'texture' ? (
+                  <TextureUploadSelector
+                    productId={product.id}
+                    onTexturesSelected={(front, back) => {
+                      // Convert texture to file for cart
+                      if (front) setUploadedFile(front)
+                    }}
+                    onMockupGenerated={(url) => {
+                      // Handle mockup generation
+                    }}
+                  />
+                ) : (
+                  <DesignOptionSelector
+                    selectedOption={designOption}
+                    onSelectOption={setDesignOption}
+                    uploadedFile={uploadedFile}
+                    onFileUpload={setUploadedFile}
+                    designBrief={designBrief}
+                    onDesignBriefChange={setDesignBrief}
+                    productId={product.id}
+                  />
+                )}
                 <div className="flex gap-3">
                   <Button variant="outline" className="flex-1 rounded-full" onClick={() => setStep(1)}>
                     {t.customizer.backToMaterial}
                   </Button>
-                  <Button className="flex-1 rounded-full" disabled={!canSubmit} onClick={handleAddToCart}>
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    {t.customizer.addToCart}
-                  </Button>
+                  {!isAdmin && (
+                    <Button className="flex-1 rounded-full" disabled={!canSubmit} onClick={handleAddToCart}>
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      {t.customizer.addToCart}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

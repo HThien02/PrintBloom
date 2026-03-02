@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         id: category,
         name: v.name,
         image: v.image,
-        startingPrice: `$${v.price.toFixed(2)}`,
+        startingPrice: (v.price * 1000).toString(), // Convert to VND (assuming price is in USD)
         popular: v.popular,
         category,
       }))

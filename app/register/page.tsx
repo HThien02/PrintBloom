@@ -31,6 +31,7 @@ function RegisterForm() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Redirect if already logged in
   useEffect(() => {
@@ -56,31 +57,29 @@ function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     setLoading(true);
 
     // Validation
+    const errors: Record<string, string> = {}
+    
     if (!formData.name.trim()) {
-      setError(t.validation.nameRequired);
-      setLoading(false);
-      return;
+      errors.name = t.validation.nameRequired;
     }
     if (!formData.email.trim()) {
-      setError(t.validation.emailRequired);
-      setLoading(false);
-      return;
-    }
-    if (!formData.email.includes("@")) {
-      setError(t.validation.email);
-      setLoading(false);
-      return;
+      errors.email = t.validation.emailRequired;
+    } else if (!formData.email.includes("@")) {
+      errors.email = t.validation.email;
     }
     if (formData.password.length < 6) {
-      setError(t.validation.passwordMinLength);
-      setLoading(false);
-      return;
+      errors.password = t.validation.passwordMinLength;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError(t.validation.passwordMismatch);
+      errors.confirmPassword = t.validation.passwordMismatch;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }
@@ -132,8 +131,11 @@ function RegisterForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                required
+                className={fieldErrors.name ? 'border-red-500' : ''}
               />
+              {fieldErrors.name && (
+                <p className="text-sm text-red-500">{fieldErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">{t.signup.emailLabel}</Label>
@@ -145,8 +147,11 @@ function RegisterForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                required
+                className={fieldErrors.email ? 'border-red-500' : ''}
               />
+              {fieldErrors.email && (
+                <p className="text-sm text-red-500">{fieldErrors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">{t.signup.passwordLabel}</Label>
@@ -158,8 +163,11 @@ function RegisterForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                required
+                className={fieldErrors.password ? 'border-red-500' : ''}
               />
+              {fieldErrors.password && (
+                <p className="text-sm text-red-500">{fieldErrors.password}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">{t.signup.confirmPassword}</Label>
@@ -171,8 +179,11 @@ function RegisterForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
-                required
+                className={fieldErrors.confirmPassword ? 'border-red-500' : ''}
               />
+              {fieldErrors.confirmPassword && (
+                <p className="text-sm text-red-500">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
             {error && (
               <div className="text-sm text-red-500 bg-red-50 p-3 rounded-md">

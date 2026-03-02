@@ -26,7 +26,7 @@ export function Footer() {
                 P
               </div>
               <span className="font-serif text-xl text-foreground">
-                PrintBloom
+                TPrint
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">

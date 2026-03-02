@@ -176,7 +176,7 @@ export const translations = {
       company: "Company",
       support: "Support",
       legal: "Legal",
-      copyright: "2026 PrintBloom. All rights reserved.",
+      copyright: "2026 TPrint. All rights reserved.",
       productLinks: [
         "Business Cards",
         "Flyers",
@@ -191,7 +191,7 @@ export const translations = {
     },
     login: {
       title: "Welcome back",
-      subtitle: "Sign in to your PrintBloom account",
+      subtitle: "Sign in to your TPrint account",
       emailLabel: "Email address",
       emailPlaceholder: "you@example.com",
       passwordLabel: "Password",
@@ -211,7 +211,7 @@ export const translations = {
     },
     signup: {
       title: "Create your account",
-      subtitle: "Join PrintBloom and start ordering",
+      subtitle: "Join TPrint and start ordering",
       fullName: "Full Name",
       fullNamePlaceholder: "Enter your full name",
       emailLabel: "Email address",
@@ -326,7 +326,7 @@ export const translations = {
     },
     about: {
       backToHome: "Back to Home",
-      badge: "About PrintBloom",
+      badge: "About TPrint",
       title: "Bringing your creative vision to life through print",
       intro:
         "We are a team of passionate printers, designers, and craftspeople dedicated to transforming your ideas into beautiful, tangible products. From business cards to large-format banners, every piece we create is a reflection of our commitment to quality.",
@@ -375,7 +375,7 @@ export const translations = {
           year: "2021",
           title: "The Beginning",
           description:
-            "PrintBloom was founded with a simple mission: make premium printing accessible to everyone.",
+            "TPrint was founded with a simple mission: make premium printing accessible to everyone.",
         },
         {
           year: "2022",
@@ -460,7 +460,7 @@ export const translations = {
         {
           name: "Sarah Chen",
           role: "Marketing Director",
-          text: "PrintBloom delivered our business cards in record time. The quality is outstanding and our clients always comment on them.",
+          text: "TPrint delivered our business cards in record time. The quality is outstanding and our clients always comment on them.",
         },
         {
           name: "Michael Torres",
@@ -475,7 +475,7 @@ export const translations = {
         {
           name: "David Nguyen",
           role: "Graphic Designer",
-          text: "As a designer, I'm very particular about print quality. PrintBloom nails it every time with accurate colors and sharp details.",
+          text: "As a designer, I'm very particular about print quality. TPrint nails it every time with accurate colors and sharp details.",
         },
         {
           name: "Lisa Rodriguez",
@@ -485,7 +485,7 @@ export const translations = {
         {
           name: "James Kim",
           role: "Startup Founder",
-          text: "From stickers to banners, PrintBloom has been our go-to printing partner. Reliable quality and great customer service.",
+          text: "From stickers to banners, TPrint has been our go-to printing partner. Reliable quality and great customer service.",
         },
       ],
     },
@@ -526,6 +526,27 @@ export const translations = {
       emailRequired: "Email is required",
       invalidCredentials: "Invalid email or password",
       somethingWentWrong: "Something went wrong",
+      quoteNameRequired: "Name is required",
+      quoteEmailRequired: "Email is required",
+      quoteEmailInvalid: "Please enter a valid email",
+      // API validation messages
+      apiEmailRequired: "Email is required",
+      apiEmailInvalid: "Please enter a valid email address",
+      apiFirstNameRequired: "First name is required",
+      apiLastNameRequired: "Last name is required",
+      apiAddressRequired: "Address is required",
+      apiCityRequired: "City is required",
+      apiStateRequired: "State is required",
+      apiZipRequired: "ZIP code is required",
+      apiShippingMethodRequired: "Shipping method is required",
+      apiValidSubtotalRequired: "Valid subtotal is required",
+      apiValidShippingCostRequired: "Valid shipping cost is required",
+      apiValidTaxRequired: "Valid tax is required",
+      apiValidTotalRequired: "Valid total is required",
+      apiItemsRequired: "At least one item is required",
+      apiProductNameRequired: "Product name is required",
+      apiValidQuantityRequired: "Valid quantity is required",
+      apiValidUnitPriceRequired: "Valid unit price is required",
     },
   },
   vi: {
@@ -682,7 +703,7 @@ export const translations = {
       company: "Công ty",
       support: "Hỗ trợ",
       legal: "Pháp lý",
-      copyright: "2026 PrintBloom. Mọi quyền được bảo lưu.",
+      copyright: "2026 TPrint. Mọi quyền được bảo lưu.",
       productLinks: [
         "Danh thiếp",
         "Tờ rơi",
@@ -726,7 +747,7 @@ export const translations = {
     },
     signup: {
       title: "Tạo tài khoản",
-      subtitle: "Tham gia PrintBloom và bắt đầu đặt hàng",
+      subtitle: "Tham gia TPrint và bắt đầu đặt hàng",
       fullName: "Họ và tên",
       fullNamePlaceholder: "Nhập họ và tên",
       emailLabel: "Địa chỉ email",
@@ -837,7 +858,7 @@ export const translations = {
     },
     about: {
       backToHome: "Về trang chủ",
-      badge: "Về PrintBloom",
+      badge: "Về TPrint",
       title: "Hiện thực hóa tầm nhìn sáng tạo",
       intro: "Chúng tôi là đội ngũ đam mê in ấn, thiết kế và thủ công.",
       valuesTitle: "Giá trị cốt lõi",
@@ -880,7 +901,7 @@ export const translations = {
         {
           year: "2021",
           title: "Khởi đầu",
-          description: "PrintBloom được thành lập.",
+          description: "TPrint được thành lập.",
         },
         {
           year: "2022",
@@ -955,7 +976,7 @@ export const translations = {
         {
           name: "Sarah Chen",
           role: "Giám đốc Marketing",
-          text: "PrintBloom giao danh thiếp cực nhanh. Chất lượng xuất sắc.",
+          text: "TPrint giao danh thiếp cực nhanh. Chất lượng xuất sắc.",
         },
         {
           name: "Michael Torres",
@@ -1020,6 +1041,27 @@ export const translations = {
       emailRequired: "Email là bắt buộc",
       invalidCredentials: "Email hoặc mật khẩu không đúng",
       somethingWentWrong: "Đã xảy ra lỗi",
+      quoteNameRequired: "Tên là bắt buộc",
+      quoteEmailRequired: "Email là bắt buộc",
+      quoteEmailInvalid: "Vui lòng nhập email hợp lệ",
+      // API validation messages
+      apiEmailRequired: "Email là bắt buộc",
+      apiEmailInvalid: "Vui lòng nhập địa chỉ email hợp lệ",
+      apiFirstNameRequired: "Tên là bắt buộc",
+      apiLastNameRequired: "Họ là bắt buộc",
+      apiAddressRequired: "Địa chỉ là bắt buộc",
+      apiCityRequired: "Thành phố là bắt buộc",
+      apiStateRequired: "Tỉnh/Thành phố là bắt buộc",
+      apiZipRequired: "Mã bưu điện là bắt buộc",
+      apiShippingMethodRequired: "Phương thức vận chuyển là bắt buộc",
+      apiValidSubtotalRequired: "Tạm tính hợp lệ là bắt buộc",
+      apiValidShippingCostRequired: "Phí vận chuyển hợp lệ là bắt buộc",
+      apiValidTaxRequired: "Thuế hợp lệ là bắt buộc",
+      apiValidTotalRequired: "Tổng cộng hợp lệ là bắt buộc",
+      apiItemsRequired: "Cần ít nhất một sản phẩm",
+      apiProductNameRequired: "Tên sản phẩm là bắt buộc",
+      apiValidQuantityRequired: "Số lượng hợp lệ là bắt buộc",
+      apiValidUnitPriceRequired: "Đơn giá hợp lệ là bắt buộc",
     },
   },
   zh: {
@@ -1155,7 +1197,7 @@ export const translations = {
       company: "公司",
       support: "支持",
       legal: "法律",
-      copyright: "2026 PrintBloom 版权所有。",
+      copyright: "2026 TPrint 版权所有。",
       productLinks: ["名片", "传单", "横幅", "贴纸", "邀请函", "包装"],
       companyLinks: ["关于我们", "招聘", "博客", "媒体"],
       supportLinks: ["帮助中心", "联系我们", "配送信息", "退换政策"],
@@ -1163,7 +1205,7 @@ export const translations = {
     },
     login: {
       title: "欢迎回来",
-      subtitle: "登录您的 PrintBloom 账户",
+      subtitle: "登录您的 TPrint 账户",
       emailLabel: "邮箱地址",
       emailPlaceholder: "you@example.com",
       passwordLabel: "密码",
@@ -1180,7 +1222,7 @@ export const translations = {
     },
     signup: {
       title: "创建账户",
-      subtitle: "加入 PrintBloom 开始下单",
+      subtitle: "加入 TPrint 开始下单",
       fullName: "姓名",
       fullNamePlaceholder: "请输入您的姓名",
       emailLabel: "邮箱地址",
@@ -1325,6 +1367,27 @@ export const translations = {
       emailRequired: "邮箱为必填项",
       invalidCredentials: "邮箱或密码错误",
       somethingWentWrong: "出现错误",
+      quoteNameRequired: "姓名为必填项",
+      quoteEmailRequired: "邮箱为必填项",
+      quoteEmailInvalid: "请输入有效的邮箱",
+      // API validation messages
+      apiEmailRequired: "邮箱为必填项",
+      apiEmailInvalid: "请输入有效的邮箱地址",
+      apiFirstNameRequired: "名字为必填项",
+      apiLastNameRequired: "姓氏为必填项",
+      apiAddressRequired: "地址为必填项",
+      apiCityRequired: "城市为必填项",
+      apiStateRequired: "省份为必填项",
+      apiZipRequired: "邮政编码为必填项",
+      apiShippingMethodRequired: "配送方式为必填项",
+      apiValidSubtotalRequired: "有效的小计为必填项",
+      apiValidShippingCostRequired: "有效的运费为必填项",
+      apiValidTaxRequired: "有效的税费为必填项",
+      apiValidTotalRequired: "有效的总计为必填项",
+      apiItemsRequired: "至少需要一件商品",
+      apiProductNameRequired: "产品名称为必填项",
+      apiValidQuantityRequired: "有效的数量为必填项",
+      apiValidUnitPriceRequired: "有效的单价为必填项",
     },
   },
 } as const;

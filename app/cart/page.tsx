@@ -46,7 +46,7 @@ function CartContent() {
               P
             </div>
             <span className="font-serif text-xl text-foreground">
-              PrintBloom
+              TPrint
             </span>
           </Link>
           <LanguageSwitcher />

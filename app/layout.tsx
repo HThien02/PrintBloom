@@ -12,7 +12,7 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "PrintBloom - Premium Printing Products",
+  title: "TPrint - Premium Printing Products",
   description:
     "Custom printing services for business cards, flyers, banners and more. Upload your design or hire a professional designer.",
   icons: {

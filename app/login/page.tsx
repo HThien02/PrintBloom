@@ -23,6 +23,7 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Redirect if already logged in
   useEffect(() => {
@@ -49,6 +50,26 @@ function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setFieldErrors({});
+
+    // Validation
+    const errors: Record<string, string> = {}
+    
+    if (!email.trim()) {
+      errors.email = t.validation.emailRequired;
+    } else if (!email.includes("@")) {
+      errors.email = t.validation.email;
+    }
+    
+    if (!password.trim()) {
+      errors.password = t.validation.required;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const result = await signIn("credentials", {
@@ -83,7 +104,7 @@ function LoginForm() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
             P
           </div>
-          <span className="font-serif text-xl text-foreground">PrintBloom</span>
+          <span className="font-serif text-xl text-foreground">TPrint</span>
         </Link>
         <LanguageSwitcher />
       </div>
@@ -114,9 +135,11 @@ function LoginForm() {
                   placeholder={t.login.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11"
+                  className={`h-11 ${fieldErrors.email ? 'border-red-500' : ''}`}
                 />
+                {fieldErrors.email && (
+                  <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -136,9 +159,11 @@ function LoginForm() {
                     placeholder={t.login.passwordPlaceholder}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11 pr-10"
+                    className={`h-11 pr-10 ${fieldErrors.password ? 'border-red-500' : ''}`}
                   />
+                  {fieldErrors.password && (
+                    <p className="text-sm text-red-500 mt-1">{fieldErrors.password}</p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}

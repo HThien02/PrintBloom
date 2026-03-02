@@ -54,7 +54,7 @@ function AboutContent() {
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
                 <Image
                   src="/images/about-team.jpg"
-                  alt="PrintBloom printing workshop"
+                  alt="TPrint printing workshop"
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 50vw"

@@ -1,4 +1,4 @@
-// PrintBloom - PostgreSQL
+// TPrint - PostgreSQL
 generator client {
   provider = "prisma-client-js"
 }
