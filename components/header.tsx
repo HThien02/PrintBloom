@@ -20,6 +20,10 @@ export function Header() {
   // Check if user is admin
   const isAdmin = session?.user?.role === "ADMIN";
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" });
+  };
+
   const navLinks = [
     { label: t.nav.products, href: "#products" },
     { label: t.nav.howItWorks, href: "#how-it-works" },
@@ -28,8 +32,20 @@ export function Header() {
     { label: "Feedback", href: "/feedback" },
   ];
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+  const handleNavigation = (href: string) => {
+    const sectionId = href.replace("#", "");
+    const isOnProductPage = window.location.pathname === "/" && 
+      (document.querySelector('[data-testid="product-customizer"]') || 
+       document.querySelector('.product-customizer') ||
+       window.location.search.includes('product'));
+    
+    if (window.location.pathname !== "/" || isOnProductPage) {
+      // Navigate to home page with hash
+      window.location.href = "/" + href;
+    } else {
+      // Already on home page, just scroll to section
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
@@ -54,12 +70,8 @@ export function Header() {
               </Link>
             ) : (
               <button
-                onClick={() => {
-                  window.location.href = "/";
-                  setTimeout(() => {
-                    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                  }, 100);
-                }}
+                key={link.href}
+                onClick={() => handleNavigation(link.href)}
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
@@ -132,12 +144,7 @@ export function Header() {
             <Button 
               size="sm" 
               className="hidden rounded-full md:flex"
-              onClick={() => {
-                window.location.href = "/";
-                setTimeout(() => {
-                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                }, 100);
-              }}
+              onClick={() => handleNavigation("#products")}
             >
               {t.nav.getStarted}
             </Button>
@@ -173,10 +180,7 @@ export function Header() {
               ) : (
                 <button
                   onClick={() => {
-                    window.location.href = "/";
-                    setTimeout(() => {
-                      document.getElementById(link.href.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
-                    }, 100);
+                    handleNavigation(link.href);
                     setMobileOpen(false);
                   }}
                   className="text-sm text-muted-foreground hover:text-foreground"
@@ -231,10 +235,7 @@ export function Header() {
               size="sm" 
               className="mt-2 rounded-full"
               onClick={() => {
-                window.location.href = "/";
-                setTimeout(() => {
-                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                }, 100);
+                handleNavigation("#products");
                 setMobileOpen(false);
               }}
             >

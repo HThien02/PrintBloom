@@ -40,7 +40,7 @@ export default function RootLayout({
         className={`${dmSans.variable} ${dmSerif.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
-        <Analytics />
+        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   );

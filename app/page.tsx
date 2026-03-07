@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { LanguageProvider } from "@/lib/language-context"
 import { CartProvider } from "@/lib/cart-context"
 import { Toaster } from "@/components/ui/sonner"
@@ -14,6 +14,15 @@ import { Footer } from "@/components/footer"
 
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, []);
 
   function handleSelectProduct(product: Product) {
     setSelectedProduct(product)

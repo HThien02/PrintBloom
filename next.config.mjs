@@ -6,6 +6,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+  turbopack: {
+    // Turbopack configuration
+  },
 }
 
 export default nextConfig

@@ -138,12 +138,14 @@ function AboutContent() {
               <p className="mt-3 max-w-lg text-muted-foreground">
                 {t.about.ctaSubtitle}
               </p>
-              <Link
-                href="/#products"
+              <button
+                onClick={() => {
+                  window.location.href = "/#products";
+                }}
                 className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 {t.about.browseProducts}
-              </Link>
+              </button>
             </div>
           </div>
         </section>

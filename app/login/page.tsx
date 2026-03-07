@@ -28,9 +28,52 @@ function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (session) {
-      router.push("/");
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get('returnUrl');
+      
+      // Process guest cart items after login
+      const guestCartItems = localStorage.getItem('guest-cart-items');
+      if (guestCartItems) {
+        const items = JSON.parse(guestCartItems);
+        
+        // Add each item to cart via API sequentially to avoid race conditions
+        const migrateItems = async () => {
+          for (const item of items) {
+            try {
+              const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  productId: item.product.id,
+                  productName: item.productName,
+                  materialId: item.material?.id || null,
+                  materialName: item.material?.name || null,
+                  designOption: item.designOption,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  isCustomQuantity: item.isCustomQuantity,
+                }),
+              });
+              
+              if (!response.ok) {
+                console.error('Login useEffect - Failed to migrate item:', await response.text());
+              }
+            } catch (error) {
+              console.error('Login useEffect - Error migrating guest cart item:', error);
+            }
+          }
+          
+          // Clear guest cart items and redirect after all items are processed
+          localStorage.removeItem('guest-cart-items');
+          router.push(returnUrl || "/");
+        };
+        
+        migrateItems();
+      } else {
+        router.push(returnUrl || "/");
+      }
     }
-  }, [session, router]);
+  }, [session]); // Remove router to prevent excessive rebuilds
 
   // Show loading while checking session
   if (status === "loading") {
@@ -82,8 +125,43 @@ function LoginForm() {
       if (result?.error) {
         setError(t.validation.invalidCredentials);
       } else {
-        // Redirect to home or admin after successful login
-        window.location.href = "/";
+        // Process guest cart items after successful login
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnUrl = urlParams.get('returnUrl');
+        
+        const guestCartItems = localStorage.getItem('guest-cart-items');
+        if (guestCartItems) {
+          const items = JSON.parse(guestCartItems);
+          // Add each item to cart via API
+          const migrationPromises = items.map(async (item: any) => {
+            try {
+              const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  productId: item.product.id,
+                  productName: item.productName,
+                  materialId: item.material?.id || null,
+                  materialName: item.material?.name || null,
+                  designOption: item.designOption,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  isCustomQuantity: item.isCustomQuantity,
+                }),
+              });
+            } catch (error) {
+              console.error('Error migrating guest cart item:', error);
+            }
+          });
+          
+          // Wait for all items to be added, then redirect
+          Promise.all(migrationPromises).then(() => {
+            localStorage.removeItem('guest-cart-items');
+            window.location.href = returnUrl || "/";
+          });
+        } else {
+          window.location.href = returnUrl || "/";
+        }
       }
     } catch (err) {
       setError(t.validation.somethingWentWrong);

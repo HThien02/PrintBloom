@@ -18,7 +18,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log("Missing email or password");
           return null;
         }
 
@@ -27,12 +26,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user) {
-          console.log("User not found:", credentials.email);
           return null;
         }
 
         if (!user.password) {
-          console.log("User has no password set");
           return null;
         }
 
@@ -42,11 +39,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
 
         if (!isPasswordValid) {
-          console.log("Invalid password");
           return null;
         }
 
-        console.log("Login successful:", user.email); // Cast to any to access role field which exists in schema but not generated client yet
+        // Cast to any to access role field which exists in schema but not generated client yet
         const userWithRole = user as any;
         return {
           id: user.id,
@@ -104,13 +100,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.image = (token.picture as string) || null;
       }
       return session;
-    },
-    async signIn({ user, account }) {
-      // Allow OAuth sign ins
-      if (account?.provider === "google") {
-        return true;
-      } // Allow credentials sign in
-      return true;
     },
   },
   pages: {

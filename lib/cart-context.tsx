@@ -11,6 +11,7 @@ import {
 import type { Product } from "@/components/product-catalog";
 import type { Material } from "@/components/material-selector";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export interface CartItem {
   id: string;
@@ -36,14 +37,25 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | null>(null);
 
 const CART_KEY = "tprint-cart";
+const GUEST_CART_ITEMS_KEY = "guest-cart-items";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   const isLoggedIn = status === "authenticated";
   const isGuest = status === "unauthenticated" || status === "loading";
+
+  // Helper function to check if item already exists in cart
+  const itemExistsInCart = useCallback((item: Omit<CartItem, "id">) => {
+    return items.some((cartItem) => 
+      cartItem.product.id === item.product.id &&
+      cartItem.material?.id === item.material?.id &&
+      cartItem.designOption === item.designOption
+    );
+  }, [items]);
 
   const loadFromLocalStorage = useCallback(() => {
     try {
@@ -92,7 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else if (isGuest) {
       loadFromLocalStorage();
     }
-  }, [isLoggedIn, isGuest, fetchCartFromDB, loadFromLocalStorage]);
+  }, [isLoggedIn, isGuest]); // Remove function dependencies
 
   // Save to localStorage for guest users
   useEffect(() => {
@@ -104,6 +116,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = useCallback(
     async (item: Omit<CartItem, "id">) => {
       if (isLoggedIn) {
+        // Check if item already exists in cart to prevent duplicates
+        if (itemExistsInCart(item)) {
+          return;
+        }
+
         // Add to database
         try {
           const response = await fetch("/api/cart", {
@@ -143,12 +160,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
           console.error("Error adding to cart:", error);
         }
       } else {
-        // Add to localStorage for guest users
-        const id = `${item.product.id}-${item.material?.id ?? "none"}-${item.designOption ?? "none"}-${Date.now()}`;
-        setItems((prev) => [...prev, { ...item, id }]);
+        // For guest users: store item and redirect to login
+        try {
+          // Get existing guest cart items or create empty array
+          const existingGuestItems = localStorage.getItem(GUEST_CART_ITEMS_KEY);
+          const guestItems = existingGuestItems ? JSON.parse(existingGuestItems) : [];
+          
+          // Check if item already exists to prevent duplicates
+          const itemExists = guestItems.some((guestItem: any) => 
+            guestItem.product.id === item.product.id &&
+            guestItem.material?.id === item.material?.id &&
+            guestItem.designOption === item.designOption
+          );
+          
+          if (!itemExists) {
+            // Add new item to guest cart
+            const newItem = {
+              ...item,
+              id: `${item.product.id}-${item.material?.id ?? "none"}-${item.designOption ?? "none"}-${Date.now()}`
+            };
+            guestItems.push(newItem);
+            localStorage.setItem(GUEST_CART_ITEMS_KEY, JSON.stringify(guestItems));
+          }
+          
+          // Redirect to login with returnUrl
+          const currentPath = window.location.pathname + window.location.search;
+          router.push(`/login?returnUrl=${encodeURIComponent(currentPath)}`);
+        } catch (error) {
+          console.error("Error storing guest cart items:", error);
+          // Fallback to localStorage if redirect fails
+          const id = `${item.product.id}-${item.material?.id ?? "none"}-${item.designOption ?? "none"}-${Date.now()}`;
+          setItems((prev) => [...prev, { ...item, id }]);
+        }
       }
     },
-    [isLoggedIn],
+    [isLoggedIn, router, itemExistsInCart],
   );
 
   const removeFromCart = useCallback(

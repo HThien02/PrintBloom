@@ -2,14 +2,18 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { Check, MessageCircle } from "lucide-react"
+import { Check, MessageCircle, Info } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useLanguage } from "@/lib/language-context"
 
 export interface Material {
   id: string
   name: string
   description: string
+  detailedDescription?: string
+  image?: string
   priceModifier: string
   finish: string
 }
@@ -21,17 +25,89 @@ export interface QuantityOption {
 
 const materialsByProduct: Record<string, Material[]> = {
   "business-cards": [
-    { id: "matte-350", name: "Matte Cardstock", description: "350gsm smooth matte finish", priceModifier: "+$0", finish: "Matte" },
-    { id: "glossy-350", name: "Glossy Cardstock", description: "350gsm high-shine glossy", priceModifier: "+$2", finish: "Glossy" },
-    { id: "linen", name: "Linen Texture", description: "300gsm textured linen paper", priceModifier: "+$4", finish: "Textured" },
-    { id: "kraft", name: "Kraft Paper", description: "300gsm recycled kraft", priceModifier: "+$3", finish: "Natural" },
-    { id: "cotton", name: "Cotton Paper", description: "600gsm luxury cotton blend", priceModifier: "+$8", finish: "Premium" },
+    { 
+      id: "matte-350", 
+      name: "Matte Cardstock", 
+      description: "350gsm smooth matte finish", 
+      detailedDescription: "Professional matte finish with a smooth, non-reflective surface. Ideal for business cards that need to look sophisticated and modern. The matte coating reduces glare and provides a premium feel.",
+      image: "/materials/matte-cardstock.jpg",
+      priceModifier: "+$0", 
+      finish: "Matte" 
+    },
+    { 
+      id: "glossy-350", 
+      name: "Glossy Cardstock", 
+      description: "350gsm high-shine glossy", 
+      detailedDescription: "Eye-catching glossy finish that makes colors pop. Perfect for designs with vibrant colors and photographs. The high-shine coating adds durability and a professional polish.",
+      image: "/materials/glossy-cardstock.jpg",
+      priceModifier: "+$2", 
+      finish: "Glossy" 
+    },
+    { 
+      id: "linen", 
+      name: "Linen Texture", 
+      description: "300gsm textured linen paper", 
+      detailedDescription: "Elegant textured finish with a subtle linen pattern. Adds a tactile element to your business cards, creating a memorable first impression. The texture provides both visual and physical interest.",
+      image: "/materials/linen-texture.jpg",
+      priceModifier: "+$4", 
+      finish: "Textured" 
+    },
+    { 
+      id: "kraft", 
+      name: "Kraft Paper", 
+      description: "300gsm recycled kraft", 
+      detailedDescription: "Eco-friendly kraft paper with natural fibers. Perfect for organic, rustic, or environmentally conscious brands. The natural brown color and texture convey authenticity and sustainability.",
+      image: "/materials/kraft-paper.jpg",
+      priceModifier: "+$3", 
+      finish: "Natural" 
+    },
+    { 
+      id: "cotton", 
+      name: "Cotton Paper", 
+      description: "600gsm luxury cotton blend", 
+      detailedDescription: "Premium cotton paper with exceptional durability and a soft, luxurious feel. The heavyweight cotton blend provides unmatched quality and a prestigious appearance for high-end business cards.",
+      image: "/materials/cotton-paper.jpg",
+      priceModifier: "+$8", 
+      finish: "Premium" 
+    },
   ],
   flyers: [
-    { id: "matte-170", name: "Matte Coated", description: "170gsm matte coated paper", priceModifier: "+$0", finish: "Matte" },
-    { id: "glossy-170", name: "Glossy Coated", description: "170gsm glossy coated paper", priceModifier: "+$1", finish: "Glossy" },
-    { id: "silk-250", name: "Silk Finish", description: "250gsm silk laminated", priceModifier: "+$3", finish: "Silk" },
-    { id: "recycled", name: "Recycled Paper", description: "160gsm eco-friendly recycled", priceModifier: "+$2", finish: "Eco" },
+    { 
+      id: "matte-170", 
+      name: "Matte Coated", 
+      description: "170gsm matte coated paper", 
+      detailedDescription: "Professional matte coating that provides excellent readability and a sophisticated appearance. The non-reflective surface is perfect for text-heavy flyers and documents.",
+      image: "/materials/matte-coated.jpg",
+      priceModifier: "+$0", 
+      finish: "Matte" 
+    },
+    { 
+      id: "glossy-170", 
+      name: "Glossy Coated", 
+      description: "170gsm glossy coated paper", 
+      detailedDescription: "Vibrant glossy coating that makes colors appear brighter and more saturated. Ideal for promotional flyers with photographic content and colorful designs.",
+      image: "/materials/glossy-coated.jpg",
+      priceModifier: "+$1", 
+      finish: "Glossy" 
+    },
+    { 
+      id: "silk-250", 
+      name: "Silk Finish", 
+      description: "250gsm silk laminated", 
+      detailedDescription: "Premium silk lamination provides a smooth, sophisticated finish with subtle sheen. Offers excellent durability and a luxurious tactile experience.",
+      image: "/materials/silk-finish.jpg",
+      priceModifier: "+$3", 
+      finish: "Silk" 
+    },
+    { 
+      id: "recycled", 
+      name: "Recycled Paper", 
+      description: "160gsm eco-friendly recycled", 
+      detailedDescription: "Environmentally responsible paper made from post-consumer recycled fibers. Features natural flecks and texture that convey your commitment to sustainability.",
+      image: "/materials/recycled-paper.jpg",
+      priceModifier: "+$2", 
+      finish: "Eco" 
+    },
   ],
   banners: [
     { id: "vinyl", name: "Vinyl Banner", description: "13oz scrim vinyl, weatherproof", priceModifier: "+$0", finish: "Vinyl" },
@@ -111,6 +187,60 @@ interface MaterialSelectorProps {
   onToggleCustomQuantity: (isCustom: boolean) => void
 }
 
+function MaterialInfoPopup({ material }: { material: Material }) {
+  const { t } = useLanguage()
+  
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer">
+          <Info className="h-3 w-3" />
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 p-4" align="end" side="top">
+        <div className="space-y-3">
+          <h4 className="font-semibold text-foreground">{material.name}</h4>
+          
+          {material.image && (
+            <div className="relative h-32 w-full overflow-hidden rounded-lg bg-muted">
+              <img 
+                src={material.image} 
+                alt={material.name}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  // Fallback if image doesn't exist
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              {!material.image && (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <Info className="h-8 w-8" />
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">Description:</p>
+            <p className="text-sm text-muted-foreground">
+              {material.id === 'matte-350' && t.materials.matteCardstockDetailed}
+              {material.id === 'glossy-350' && t.materials.glossyCardstockDetailed}
+              {material.id === 'linen' && t.materials.linenTextureDetailed}
+              {material.id === 'kraft' && t.materials.kraftPaperDetailed}
+              {!['matte-350', 'glossy-350', 'linen', 'kraft'].includes(material.id) && (material.detailedDescription || material.description)}
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Finish: {material.finish}</span>
+            <span className="font-medium text-primary">{material.priceModifier}</span>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  )
+}
+
 export function MaterialSelector({
   productId,
   selectedMaterial,
@@ -139,7 +269,7 @@ export function MaterialSelector({
               key={material.id}
               onClick={() => onSelectMaterial(material)}
               className={cn(
-                "flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200",
+                "relative flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200",
                 selectedMaterial?.id === material.id
                   ? "border-primary bg-primary/5 shadow-sm"
                   : "border-border bg-background hover:border-primary/30"
@@ -157,7 +287,16 @@ export function MaterialSelector({
                   <span className="font-medium text-foreground">{material.name}</span>
                   <span className="text-xs text-primary">{material.priceModifier}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{material.description}</span>
+                <span className="text-xs text-muted-foreground">
+                  {material.id === 'matte-350' && t.materials.matteCardstock}
+                  {material.id === 'glossy-350' && t.materials.glossyCardstock}
+                  {material.id === 'linen' && t.materials.linenTexture}
+                  {material.id === 'kraft' && t.materials.kraftPaper}
+                  {!['matte-350', 'glossy-350', 'linen', 'kraft'].includes(material.id) && material.description}
+                </span>
+              </div>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <MaterialInfoPopup material={material} />
               </div>
             </button>
           ))}

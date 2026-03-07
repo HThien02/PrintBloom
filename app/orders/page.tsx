@@ -123,8 +123,12 @@ export default function OrdersPage() {
                   <p className="text-muted-foreground mb-4">
                     Bạn chưa có đơn hàng nào. Hãy mua sắm để có đơn hàng đầu tiên!
                   </p>
-                  <Button asChild>
-                    <a href="#products">Mua sắm ngay</a>
+                  <Button 
+                    onClick={() => {
+                      window.location.href = "/#products";
+                    }}
+                  >
+                    Mua sắm ngay
                   </Button>
                 </div>
               </CardContent>
