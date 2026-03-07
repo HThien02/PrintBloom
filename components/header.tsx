@@ -53,13 +53,17 @@ export function Header() {
                 {link.label}
               </Link>
             ) : (
-              <a
-                key={link.href}
-                href={link.href}
+              <button
+                onClick={() => {
+                  window.location.href = "/";
+                  setTimeout(() => {
+                    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+                  }, 100);
+                }}
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
-              </a>
+              </button>
             ),
           )}
         </nav>
@@ -125,8 +129,17 @@ export function Header() {
           )}
 
           {!isAdmin && (
-            <Button asChild size="sm" className="hidden rounded-full md:flex">
-              <a href="#products">{t.nav.getStarted}</a>
+            <Button 
+              size="sm" 
+              className="hidden rounded-full md:flex"
+              onClick={() => {
+                window.location.href = "/";
+                setTimeout(() => {
+                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              }}
+            >
+              {t.nav.getStarted}
             </Button>
           )}
 
@@ -158,14 +171,18 @@ export function Header() {
                   {link.label}
                 </Link>
               ) : (
-                <a
-                  key={link.href}
-                  href={link.href}
+                <button
+                  onClick={() => {
+                    window.location.href = "/";
+                    setTimeout(() => {
+                      document.getElementById(link.href.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
+                    }, 100);
+                    setMobileOpen(false);
+                  }}
                   className="text-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
-                </a>
+                </button>
               ),
             )}
             {session ? (
@@ -210,8 +227,18 @@ export function Header() {
               </Link>
             )}
             {!isAdmin && (
-            <Button asChild size="sm" className="mt-2 rounded-full">
-              <a href="#products">{t.nav.getStarted}</a>
+            <Button 
+              size="sm" 
+              className="mt-2 rounded-full"
+              onClick={() => {
+                window.location.href = "/";
+                setTimeout(() => {
+                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+                setMobileOpen(false);
+              }}
+            >
+              {t.nav.getStarted}
             </Button>
           )}
           </nav>
